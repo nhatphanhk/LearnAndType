@@ -1,0 +1,22 @@
+appId: com.learnandtype.app
+productName: LearnAndType
+directories:
+  buildResources: build
+  output: dist
+files:
+  - 'out/**/*'
+  - 'package.json'
+  - '!node_modules/**/*'
+asarUnpack:
+  - resources/**
+win:
+  target:
+    - nsis
+  executableName: LearnAndType
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-Setup-${version}.${ext}
+  shortcutName: LearnAndType
+  createDesktopShortcut: always
+npmRebuild: false
