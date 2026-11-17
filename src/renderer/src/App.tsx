@@ -10,6 +10,7 @@ import { cx } from './components/ui'
 import Dashboard from './pages/Dashboard'
 import Topics from './pages/Topics'
 import TopicDetail from './pages/TopicDetail'
+import TextTyping from './pages/TextTyping'
 import Practice from './pages/Practice'
 import Review from './pages/Review'
 import Stats from './pages/Stats'
@@ -34,6 +35,7 @@ function useThemeClass(): void {
 const NAV = [
   { to: '/', label: 'Tổng quan', icon: '🏠' },
   { to: '/topics', label: 'Chủ đề', icon: '📚' },
+  { to: '/typing', label: 'Gõ chữ', icon: '🔤' },
   { to: '/review', label: 'Ôn tập', icon: '🔁' },
   { to: '/stats', label: 'Thống kê', icon: '📈' },
   { to: '/manage', label: 'Từ vựng của tôi', icon: '✍️' },
@@ -100,6 +102,7 @@ function Shell(): ReactNode {
             <Route path="/" element={<Dashboard />} />
             <Route path="/topics" element={<Topics />} />
             <Route path="/topics/:id" element={<TopicDetail />} />
+            <Route path="/typing" element={<TextTyping />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/review" element={<Review />} />
             <Route path="/stats" element={<Stats />} />

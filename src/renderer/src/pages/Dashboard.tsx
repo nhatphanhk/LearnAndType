@@ -5,6 +5,7 @@ import { summarize, topicProgress } from '@/core/stats'
 import { groupByTopic, useNow, useProgressMap, useSessions, useTopics, useWords } from '@/hooks/useData'
 import { useSettings } from '@/store/settingsStore'
 import { ActivityHeatmap } from '@/components/ActivityHeatmap'
+import { TopicIcon } from '@/components/TopicIcon'
 import { Button, Card, PageHeader, ProgressBar, StatTile } from '@/components/ui'
 import { formatDuration } from '@/labels'
 import { launchSession } from '@/launch'
@@ -112,8 +113,8 @@ export default function Dashboard(): ReactNode {
           {suggestion ? (
             <>
               <div className="mt-4 flex items-center gap-4">
-                <div className="emoji flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-4xl dark:bg-indigo-950">
-                  {suggestion.topic.emoji}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-4xl dark:bg-indigo-950">
+                  <TopicIcon topic={suggestion.topic} />
                 </div>
                 <div>
                   <div className="text-lg font-semibold">{suggestion.topic.name}</div>
@@ -153,7 +154,7 @@ export default function Dashboard(): ReactNode {
               <Link key={topic.id} to={`/topics/${topic.id}`} className="group block">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium group-hover:text-indigo-600">
-                    <span className="emoji mr-2">{topic.emoji}</span>
+                    {topic.emoji.trim() && <span className="emoji mr-2">{topic.emoji}</span>}
                     {topic.name}
                   </span>
                   <span className="text-slate-500 tabular-nums">

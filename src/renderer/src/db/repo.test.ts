@@ -9,6 +9,7 @@ import {
   ensureSeed,
   exportBackup,
   importBackup,
+  importIntoTopics,
   importWords,
   recordAttempt,
   resetProgress,
@@ -16,6 +17,7 @@ import {
   updateWord
 } from './repo'
 import { DAY_MS } from '@/core/srs'
+import { newTarget } from '@/core/classify'
 
 const NOW = new Date(2026, 10, 16, 10, 0, 0).getTime()
 
@@ -61,6 +63,86 @@ describe('recordAttempt', () => {
     expect(await discardSessionIfEmpty(sid)).toBe(true)
     expect(await db.sessions.count()).toBe(0)
   })
+
+  it('đánh dấu phiên chỉ chữ khi bật textOnly', async () => {
+    const plain = await startSession('copy', null, NOW)
+    const text = await startSession('copy', null, NOW, true)
+    expect((await db.sessions.get(plain))?.textOnly).toBeUndefined()
+    expect((await db.sessions.get(text))?.textOnly).toBe(true)
+  })
+})
+
+describe('dữ liệu không ảnh, không icon', () => {
+  it('chủ đề không icon giữ emoji rỗng, từ chỉ có từ + nghĩa', async () => {
+    const tid = await createTopic({ name: 'Danh sách dán', nameEn: '', emoji: '  ' }, NOW)
+    expect((await db.topics.get(tid))?.emoji).toBe('')
+    const r = await importWords(tid, [
+      { word: 'laptop', meaningVi: 'máy tính xách tay', ipa: '', partOfSpeech: '', emoji: '', example: '', exampleVi: '' }
+    ])
+    expect(r).toEqual({ added: 1, updated: 0, skipped: 0 })
+    const [w] = await db.words.where('topicId').equals(tid).toArray()
+    expect(w).toMatchObject({ word: 'laptop', meaningVi: 'máy tính xách tay', emoji: '' })
+    expect(w.imageUrl).toBeUndefined()
+    expect(w.imageId).toBeUndefined()
+  })
+
+  it('bỏ qua từ chưa có nghĩa (nhập thông minh chưa tra được)', async () => {
+    const tid = await createTopic({ name: 'Tra dở', nameEn: '', emoji: '' }, NOW)
+    const blank = { ipa: '', partOfSpeech: '', emoji: '', example: '', exampleVi: '' }
+    const r = await importWords(tid, [
+      { word: 'negotiate', meaningVi: '  ', ...blank },
+      { word: 'deadline', meaningVi: 'hạn chót', ...blank },
+      { word: ' ', meaningVi: 'trống', ...blank }
+    ])
+    expect(r).toEqual({ added: 1, updated: 0, skipped: 2 })
+    expect((await db.words.where('topicId').equals(tid).toArray()).map((w) => w.word)).toEqual(['deadline'])
+  })
+})
+
+describe('importIntoTopics (phân loại khi nhập)', () => {
+  const blank = { ipa: '', partOfSpeech: '', emoji: '', example: '', exampleVi: '' }
+  const r = (word: string, meaningVi: string) => ({ word, meaningVi, ...blank })
+
+  it('tạo chủ đề mới đúng một lần, dùng lại chủ đề cùng tên, mỗi từ vào đúng chủ đề', async () => {
+    await ensureSeed(NOW)
+    const office = await createTopic({ name: 'Văn phòng', nameEn: '', emoji: '' }, NOW)
+    const res = await importIntoTopics(
+      [
+        { target: { kind: 'topic', topicId: office }, rows: [r('printer', 'máy in')] },
+        { target: newTarget('Kinh doanh & tài chính', { emoji: '💰' }), rows: [r('invoice', 'hóa đơn')] },
+        // Cùng tên viết khác → gộp vào chủ đề vừa tạo
+        { target: newTarget('kinh doanh & TAI CHINH'), rows: [r('profit', 'lợi nhuận')] },
+        // Trùng tên chủ đề đã có → dùng lại "Văn phòng"
+        { target: newTarget('văn phòng'), rows: [r('stapler', 'cái dập ghim')] },
+        { target: newTarget('Rỗng'), rows: [] }
+      ],
+      NOW
+    )
+    expect(res.map((x) => [x.name, x.created, x.added])).toEqual([
+      ['Văn phòng', false, 2],
+      ['Kinh doanh & tài chính', true, 2]
+    ])
+    const custom = (await db.topics.toArray()).filter((t) => !t.isBuiltIn)
+    expect(custom.map((t) => t.name).sort()).toEqual(['Kinh doanh & tài chính', 'Văn phòng'])
+    expect(custom.find((t) => t.name.startsWith('Kinh'))?.emoji).toBe('💰')
+    const words = async (id: string) => (await db.words.where('topicId').equals(id).toArray()).map((w) => w.word).sort()
+    expect(await words(office)).toEqual(['printer', 'stapler'])
+    expect(await words(res[1].topicId)).toEqual(['invoice', 'profit'])
+  })
+
+  it('không ghi vào chủ đề có sẵn và không tạo dở dang khi lỗi', async () => {
+    await ensureSeed(NOW)
+    await expect(
+      importIntoTopics(
+        [
+          { target: newTarget('Tạm'), rows: [r('a', 'b')] },
+          { target: { kind: 'topic', topicId: 'animals' }, rows: [r('zebra', 'ngựa vằn')] }
+        ],
+        NOW
+      )
+    ).rejects.toThrow()
+    expect((await db.topics.toArray()).filter((t) => !t.isBuiltIn)).toEqual([])
+  })
 })
 
 describe('chủ đề & từ tự tạo', () => {
@@ -87,7 +169,7 @@ describe('chủ đề & từ tự tạo', () => {
       { word: 'printer', meaningVi: 'máy in (cập nhật)', ipa: '', partOfSpeech: '', emoji: '', example: '', exampleVi: '' },
       { word: 'desk', meaningVi: 'bàn làm việc', ipa: '', partOfSpeech: '', emoji: '', example: '', exampleVi: '' }
     ])
-    expect(res).toEqual({ added: 1, updated: 1 })
+    expect(res).toEqual({ added: 1, updated: 1, skipped: 0 })
     const updatedWord = await db.words.get(wid)
     expect(updatedWord?.meaningVi).toBe('máy in (cập nhật)')
     // Ô trống trong CSV giữ nguyên dữ liệu cũ

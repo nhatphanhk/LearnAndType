@@ -1,12 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CSV_COLUMNS, parseWordsCsv, wordsToCsv } from '@/core/csv'
+import { CSV_COLUMNS, wordsToCsv } from '@/core/csv'
 import {
   addWord,
   createTopic,
   deleteTopic,
   deleteWord,
-  importWords,
+  importIntoTopics,
   updateTopic,
   updateWord,
   type TopicInput,
@@ -14,6 +14,8 @@ import {
 } from '@/db/repo'
 import { useTopic, useTopics, useWords } from '@/hooks/useData'
 import { WordImage } from '@/components/WordImage'
+import { TopicIcon } from '@/components/TopicIcon'
+import { SmartImport, importMessage } from '@/components/SmartImport'
 import { toast } from '@/components/Toast'
 import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, cx, inputCls } from '@/components/ui'
 import { POS_LABEL, posLabel } from '@/labels'
@@ -23,13 +25,13 @@ import type { Topic, Word } from '@/types'
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
+/** File mẫu chỉ cần 2 cột: từ và nghĩa (không ảnh, không icon). */
 const SAMPLE_CSV =
   '﻿' +
-  CSV_COLUMNS.join(',') +
-  '\n' +
-  'laptop,máy tính xách tay,/ˈlæp.tɑːp/,n,💻,"I bring my laptop to work every day.",Tôi mang máy tính xách tay đi làm mỗi ngày.,\n' +
-  'meeting,cuộc họp,/ˈmiː.t̬ɪŋ/,n,🤝,The meeting starts at nine.,Cuộc họp bắt đầu lúc chín giờ.,\n' +
-  'deadline,hạn chót,/ˈded.laɪn/,n,⏳,"The deadline is Friday, so hurry up.","Hạn chót là thứ Sáu, nên nhanh lên.",\n'
+  'word,meaning\n' +
+  'laptop,máy tính xách tay\n' +
+  'meeting,cuộc họp\n' +
+  'deadline,hạn chót\n'
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
@@ -51,7 +53,7 @@ function TopicForm({
   const [v, setV] = useState<TopicInput>({
     name: initial?.name ?? '',
     nameEn: initial?.nameEn ?? '',
-    emoji: initial?.emoji ?? '📘',
+    emoji: initial?.emoji ?? '',
     description: initial?.description ?? ''
   })
   const [busy, setBusy] = useState(false)
@@ -71,9 +73,16 @@ function TopicForm({
         }
       }}
     >
-      <div className="grid grid-cols-[5rem_1fr] gap-3">
-        <Field label="Biểu tượng">
-          <input className={cx(inputCls, 'emoji text-center text-2xl')} value={v.emoji} onChange={(e) => setV({ ...v, emoji: e.target.value })} maxLength={8} />
+      <div className="grid grid-cols-[6rem_1fr] gap-3">
+        <Field label="Icon (tùy chọn)">
+          <input
+            className={cx(inputCls, 'emoji text-center text-2xl')}
+            value={v.emoji}
+            onChange={(e) => setV({ ...v, emoji: e.target.value })}
+            maxLength={8}
+            placeholder="Aa"
+            title="Để trống thì hiện chữ cái đầu của tên chủ đề"
+          />
         </Field>
         <Field label="Tên chủ đề *">
           <input className={inputCls} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder="VD: Văn phòng" autoFocus />
@@ -189,7 +198,9 @@ function WordForm({
       </Field>
 
       <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/50">
-        <div className="mb-3 text-sm font-medium">Hình ảnh minh họa</div>
+        <div className="mb-3 text-sm font-medium">
+          Hình ảnh minh họa <span className="font-normal text-slate-500">(không bắt buộc)</span>
+        </div>
         <div className="flex gap-4">
           <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
             {preview ? (
@@ -215,7 +226,10 @@ function WordForm({
                 </Button>
               )}
             </div>
-            <div className="text-xs text-slate-500">Thứ tự ưu tiên: ảnh từ máy → URL ảnh → emoji.</div>
+            <div className="text-xs text-slate-500">
+              Thứ tự ưu tiên: ảnh từ máy → URL ảnh → emoji. Để trống cũng được — từ sẽ chỉ hiện dạng chữ. Trang "Gõ chữ" luôn
+              luyện không hình ảnh.
+            </div>
           </div>
         </div>
       </div>
@@ -238,16 +252,20 @@ export default function Manage(): ReactNode {
   const topics = useTopics()
   const custom = (topics ?? []).filter((t) => !t.isBuiltIn)
   const [creating, setCreating] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   return (
     <div>
       <PageHeader
         title="Từ vựng của tôi"
-        subtitle="Tạo chủ đề riêng, thêm từ kèm ảnh hoặc nhập nhanh từ file CSV."
+        subtitle="Tạo chủ đề riêng, thêm từng từ hoặc nhập thông minh (dán danh sách, đoạn văn, file CSV) — ảnh và icon đều không bắt buộc."
         actions={
-          <Button variant="primary" onClick={() => setCreating(true)}>
-            ＋ Tạo chủ đề
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setImporting(true)}>🗂️ Nhập & phân loại</Button>
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              ＋ Tạo chủ đề
+            </Button>
+          </div>
         }
       />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[16rem_1fr]">
@@ -263,14 +281,33 @@ export default function Manage(): ReactNode {
                 id === t.id ? 'bg-indigo-50 font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
               )}
             >
-              <span className="emoji">{t.emoji}</span>
+              <span className="flex w-5 justify-center">
+                <TopicIcon topic={t} />
+              </span>
               <span className="truncate">{t.name}</span>
             </Link>
           ))}
         </Card>
 
-        <div>{id ? <TopicEditor id={id} /> : <Intro onCreate={() => setCreating(true)} />}</div>
+        {/* min-w-0: câu ví dụ dài (lấy từ đoạn văn) không được kéo rộng cột lưới */}
+        <div className="min-w-0">
+          {id ? <TopicEditor id={id} /> : <Intro onCreate={() => setCreating(true)} onImport={() => setImporting(true)} />}
+        </div>
       </div>
+
+      <Modal open={importing} title="Nhập & phân loại vào chủ đề" onClose={() => setImporting(false)} wide="xl">
+        <SmartImport
+          classify
+          submitLabel="Lưu vào chủ đề"
+          onCancel={() => setImporting(false)}
+          onSubmit={async (groups) => {
+            const res = await importIntoTopics(groups)
+            toast.success(importMessage(res))
+            setImporting(false)
+            if (res[0]) navigate(`/manage/${res[0].topicId}`)
+          }}
+        />
+      </Modal>
 
       <Modal open={creating} title="Tạo chủ đề mới" onClose={() => setCreating(false)}>
         <TopicForm
@@ -288,16 +325,18 @@ export default function Manage(): ReactNode {
   )
 }
 
-function Intro({ onCreate }: { onCreate: () => void }): ReactNode {
+function Intro({ onCreate, onImport }: { onCreate: () => void; onImport: () => void }): ReactNode {
   return (
     <Card>
       <EmptyState icon="✍️" title="Tự xây bộ từ vựng của bạn">
-        Tạo một chủ đề, sau đó thêm từng từ (kèm emoji hoặc ảnh) hoặc nhập cả danh sách từ file CSV. Chủ đề riêng được luyện
-        gõ và theo dõi tiến độ giống hệt chủ đề có sẵn.
-        <div className="mt-5 flex justify-center gap-2">
+        Tạo một chủ đề, sau đó thêm từng từ hoặc bấm <b>✨ Nhập thông minh</b>: dán danh sách (chỉ có từ tiếng Anh cũng
+        được — app tự tra nghĩa), trích từ một đoạn văn, hoặc mở file CSV. Có sẵn một file nhiều mảng từ vựng? Bấm{' '}
+        <b>🗂️ Nhập & phân loại</b> — app tự chia từ vào các chủ đề phù hợp. Không cần ảnh hay icon.
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
           <Button variant="primary" onClick={onCreate}>
             ＋ Tạo chủ đề
           </Button>
+          <Button onClick={onImport}>🗂️ Nhập & phân loại</Button>
           <Button onClick={() => downloadText('mau-tu-vung.csv', SAMPLE_CSV, 'text/csv')}>⬇️ Tải file CSV mẫu</Button>
         </div>
       </EmptyState>
@@ -311,7 +350,7 @@ function CsvHelp(): ReactNode {
     <div className="mt-2 rounded-xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-800/50 dark:text-slate-400">
       <div className="font-medium text-slate-800 dark:text-slate-200">Định dạng CSV</div>
       <div className="mt-1">
-        Dòng đầu là tên cột, mã hóa UTF-8. Bắt buộc: <code>word</code>, <code>meaning</code>. Tùy chọn:{' '}
+        Dòng đầu là tên cột, mã hóa UTF-8. Chỉ cần 2 cột <code>word</code>, <code>meaning</code>. Có thể thêm (tùy chọn):{' '}
         {CSV_COLUMNS.slice(2).map((c, i) => (
           <span key={c}>
             {i > 0 && ', '}
@@ -319,6 +358,15 @@ function CsvHelp(): ReactNode {
           </span>
         ))}
         . Từ đã có trong chủ đề sẽ được cập nhật thay vì thêm trùng.
+      </div>
+      <div className="mt-1">
+        Thêm cột <code>topic</code> (hoặc <code>chủ đề</code>) để chia từ vào nhiều chủ đề trong một lần nhập — chủ đề chưa có sẽ
+        được tạo. Không có cột này thì bật <b>🗂️ Phân loại vào nhiều chủ đề</b> ở bước Xem lại, app tự đoán chủ đề cho từng từ.
+      </div>
+      <div className="mt-1">
+        Không có file? Bấm <b>✨ Nhập thông minh</b> và dán danh sách theo bất kỳ dạng nào: <code>laptop - máy tính xách tay</code>,
+        cột copy từ Excel (cột Anh/Việt đảo cũng được), <code>meeting (n) /ˈmiː.t̬ɪŋ/: cuộc họp</code>, hoặc chỉ từ tiếng Anh —
+        app tự tra nghĩa, phiên âm, ví dụ (cần mạng). Có thể dán cả một đoạn văn để app gợi ý từ đáng học.
       </div>
     </div>
   )
@@ -330,6 +378,7 @@ function TopicEditor({ id }: { id: string }): ReactNode {
   const navigate = useNavigate()
   const [editingTopic, setEditingTopic] = useState(false)
   const [wordModal, setWordModal] = useState<{ word?: Word } | null>(null)
+  const [pasting, setPasting] = useState(false)
   const [formKey, setFormKey] = useState(0)
 
   if (topic === null) {
@@ -350,23 +399,6 @@ function TopicEditor({ id }: { id: string }): ReactNode {
     )
   }
 
-  const onImport = async (): Promise<void> => {
-    const file = await pickFile('.csv,text/csv')
-    if (!file) return
-    const { rows, errors } = parseWordsCsv(await file.text())
-    if (rows.length === 0) {
-      toast.error(errors[0] ?? 'Không đọc được từ nào trong file.')
-      return
-    }
-    try {
-      const r = await importWords(topic.id, rows)
-      toast.success(`Đã thêm ${r.added} từ, cập nhật ${r.updated} từ.`)
-      if (errors.length) toast.info(`Bỏ qua ${errors.length} dòng lỗi. ${errors[0]}`)
-    } catch (e) {
-      toast.error(errMsg(e))
-    }
-  }
-
   const onDeleteTopic = async (): Promise<void> => {
     if (!window.confirm(`Xóa chủ đề "${topic.name}" cùng ${words.length} từ và tiến độ học của chúng?`)) return
     await deleteTopic(topic.id)
@@ -377,12 +409,13 @@ function TopicEditor({ id }: { id: string }): ReactNode {
   return (
     <div className="space-y-6">
       <Card className="flex flex-wrap items-center gap-4">
-        <div className="emoji flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-4xl dark:bg-indigo-950">{topic.emoji}</div>
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-4xl dark:bg-indigo-950">
+          <TopicIcon topic={topic} />
+        </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-bold">{topic.name}</h2>
           <div className="text-sm text-slate-500">
-            {topic.nameEn}
-            {topic.description && ` · ${topic.description}`} · {words.length} từ
+            {[topic.nameEn, topic.description, `${words.length} từ`].filter(Boolean).join(' · ')}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -403,8 +436,8 @@ function TopicEditor({ id }: { id: string }): ReactNode {
             <Button size="sm" variant="primary" onClick={() => setWordModal({})}>
               ＋ Thêm từ
             </Button>
-            <Button size="sm" onClick={() => void onImport()}>
-              ⬆️ Nhập CSV
+            <Button size="sm" onClick={() => setPasting(true)}>
+              ✨ Nhập thông minh
             </Button>
             <Button
               size="sm"
@@ -421,7 +454,7 @@ function TopicEditor({ id }: { id: string }): ReactNode {
         {words.length === 0 ? (
           <div className="p-5">
             <EmptyState icon="📝" title="Chưa có từ nào">
-              Thêm từng từ hoặc nhập nhanh từ file CSV.
+              Thêm từng từ, hoặc bấm ✨ Nhập thông minh để dán danh sách, trích từ đoạn văn hay mở file CSV.
             </EmptyState>
             <CsvHelp />
           </div>
@@ -462,6 +495,18 @@ function TopicEditor({ id }: { id: string }): ReactNode {
           </ul>
         )}
       </Card>
+
+      <Modal open={pasting} title={`Nhập thông minh vào "${topic.name}"`} onClose={() => setPasting(false)} wide="xl">
+        <SmartImport
+          fallback={{ kind: 'topic', topicId: topic.id }}
+          submitLabel="Lưu"
+          onCancel={() => setPasting(false)}
+          onSubmit={async (groups) => {
+            toast.success(importMessage(await importIntoTopics(groups)))
+            setPasting(false)
+          }}
+        />
+      </Modal>
 
       <Modal open={editingTopic} title="Sửa chủ đề" onClose={() => setEditingTopic(false)}>
         <TopicForm

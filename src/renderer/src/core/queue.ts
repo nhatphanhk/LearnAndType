@@ -1,4 +1,5 @@
 import type { PracticeMode, SessionKind, Word, WordProgress } from '@/types'
+import { isDue } from './srs'
 import { makeCloze } from './typing'
 
 export interface QueueItem {
@@ -64,6 +65,27 @@ export function pickPracticeWords(
     })
   const fresh = words.filter((w) => (progress.get(w.id)?.box ?? 0) === 0)
   return [...learned, ...fresh].slice(0, size)
+}
+
+/** Chọn danh sách từ cho một phiên của chủ đề theo loại phiên. */
+export function pickWordsForKind(
+  kind: SessionKind,
+  words: readonly Word[],
+  progress: ReadonlyMap<string, WordProgress>,
+  size: number,
+  now: number
+): Word[] {
+  switch (kind) {
+    case 'lesson':
+    case 'copy':
+      return pickLessonWords(words, progress, size)
+    case 'review':
+      return words.filter((w) => isDue(progress.get(w.id), now))
+    case 'cloze':
+      return pickPracticeWords(words.filter(canCloze), progress, size)
+    default:
+      return pickPracticeWords(words, progress, size)
+  }
 }
 
 /** Chọn chế độ kiểm tra cho lượt ôn tập, xoay vòng Nhớ → Nghe → Điền câu. */

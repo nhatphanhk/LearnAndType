@@ -4,13 +4,20 @@ import { db } from '@/db/schema'
 import { cx } from './ui'
 import type { Word } from '@/types'
 
-/** Ảnh minh họa của từ: ảnh tải lên > ảnh từ URL > emoji. */
+type VisualFields = Pick<Word, 'emoji' | 'imageUrl' | 'imageId' | 'word'>
+
+/** Từ có ảnh hoặc emoji minh họa không. Không có thì chỉ hiển thị dạng chữ. */
+export function hasWordVisual(word: Pick<Word, 'emoji' | 'imageUrl' | 'imageId'>): boolean {
+  return !!(word.imageId || word.imageUrl?.trim() || word.emoji?.trim())
+}
+
+/** Ảnh minh họa của từ: ảnh tải lên > ảnh từ URL > emoji > chữ cái đầu. */
 export function WordImage({
   word,
   size = 'md',
   className
 }: {
-  word: Pick<Word, 'emoji' | 'imageUrl' | 'imageId' | 'word'>
+  word: VisualFields
   size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
 }): ReactNode {
@@ -33,12 +40,12 @@ export function WordImage({
 
   useEffect(() => setFailed(false), [word.imageUrl, word.imageId])
 
-  const src = blobUrl ?? word.imageUrl
+  const src = blobUrl ?? word.imageUrl?.trim()
   const box = {
-    sm: 'h-10 w-10 text-3xl rounded-lg',
-    md: 'h-20 w-20 text-6xl rounded-xl',
-    lg: 'h-40 w-40 text-[7rem] rounded-2xl',
-    xl: 'h-52 w-52 text-[9rem] rounded-3xl'
+    sm: 'h-10 w-10 rounded-lg',
+    md: 'h-20 w-20 rounded-xl',
+    lg: 'h-40 w-40 rounded-2xl',
+    xl: 'h-52 w-52 rounded-3xl'
   }[size]
 
   if (src && !failed) {
@@ -52,9 +59,30 @@ export function WordImage({
       />
     )
   }
+
+  const emoji = word.emoji?.trim()
+  if (emoji) {
+    const emojiSize = { sm: 'text-3xl', md: 'text-6xl', lg: 'text-[7rem]', xl: 'text-[9rem]' }[size]
+    return (
+      <div className={cx(box, emojiSize, 'emoji flex shrink-0 items-center justify-center select-none', className)} aria-hidden>
+        {emoji}
+      </div>
+    )
+  }
+
+  // Không có ảnh/emoji: ô chữ cái đầu, không cần tìm icon.
+  const letterSize = { sm: 'text-lg', md: 'text-4xl', lg: 'text-7xl', xl: 'text-8xl' }[size]
   return (
-    <div className={cx(box, 'emoji flex shrink-0 items-center justify-center select-none', className)} aria-hidden>
-      {word.emoji || '📘'}
+    <div
+      className={cx(
+        box,
+        letterSize,
+        'flex shrink-0 items-center justify-center bg-indigo-50 font-bold text-indigo-600 select-none dark:bg-indigo-950 dark:text-indigo-300',
+        className
+      )}
+      aria-hidden
+    >
+      {[...word.word.trim()][0]?.toUpperCase() ?? 'Aa'}
     </div>
   )
 }

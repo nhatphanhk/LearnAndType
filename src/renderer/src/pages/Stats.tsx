@@ -8,7 +8,7 @@ import { useNow, useProgressMap, useSessions, useTopics } from '@/hooks/useData'
 import { useChartColors } from '@/hooks/useIsDark'
 import { Badge, Card, EmptyState, PageHeader, cx } from '@/components/ui'
 import { WordImage } from '@/components/WordImage'
-import { KIND_INFO, formatDateTime, formatDuration } from '@/labels'
+import { KIND_INFO, formatDateTime, formatDuration, topicLabel } from '@/labels'
 import type { Word } from '@/types'
 
 const RANGES = [14, 30, 90] as const
@@ -75,7 +75,7 @@ export default function Stats(): ReactNode {
       })
   }, [progress, words])
 
-  const topicName = useMemo(() => new Map((topics ?? []).map((t) => [t.id, `${t.emoji} ${t.name}`])), [topics])
+  const topicName = useMemo(() => new Map((topics ?? []).map((t) => [t.id, topicLabel(t)])), [topics])
 
   if (!sessions || !progress || !words) return null
 
@@ -250,6 +250,11 @@ export default function Stats(): ReactNode {
                       <td className="px-3 py-2 whitespace-nowrap">
                         <span className="emoji mr-1">{KIND_INFO[s.kind].icon}</span>
                         {KIND_INFO[s.kind].title}
+                        {s.textOnly && (
+                          <span className="ml-1.5">
+                            <Badge>Chỉ chữ</Badge>
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">{s.topicId ? (topicName.get(s.topicId) ?? '—') : 'Nhiều chủ đề'}</td>
                       <td className="px-3 py-2 text-right tabular-nums">

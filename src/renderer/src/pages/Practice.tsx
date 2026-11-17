@@ -9,7 +9,7 @@ import { speak, stopSpeaking } from '@/hooks/useSpeech'
 import { sfx } from '@/hooks/sfx'
 import { useTopic } from '@/hooks/useData'
 import { TypingSlots } from '@/components/TypingSlots'
-import { WordImage } from '@/components/WordImage'
+import { WordImage, hasWordVisual } from '@/components/WordImage'
 import { Badge, Button, Card, Kbd, StatTile, cx } from '@/components/ui'
 import { KIND_INFO, MODE_LABEL, formatDuration, posLabel } from '@/labels'
 import { launchSession } from '@/launch'
@@ -19,6 +19,15 @@ const VI_CHARS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽê
 
 export default function Practice(): ReactNode {
   const status = usePractice((s) => s.status)
+  // Dọn phiên đã xong khi rời màn hình này. Không reset ngay lúc bấm nút: router 7 đổi
+  // route trong transition, nên trạng thái idle sẽ render <Navigate to="/"> trước và
+  // đưa người dùng về trang chủ thay vì nơi họ chọn.
+  useEffect(
+    () => () => {
+      if (usePractice.getState().status === 'finished') usePractice.getState().reset()
+    },
+    []
+  )
   if (status === 'idle') return <Navigate to="/" replace />
   if (status === 'finished') return <Summary />
   return <Runner />
@@ -115,8 +124,10 @@ function Runner(): ReactNode {
   if (!item || !word) return null
 
   const reveal = item.mode === 'copy' || s.phase !== 'typing'
-  const showImage = item.mode !== 'listen' || reveal
-  const showMeaning = item.mode !== 'listen' || reveal
+  const listenPrompt = item.mode === 'listen' && !reveal
+  // Phiên "Gõ chữ", hoặc từ không có ảnh/emoji → chỉ hiển thị chữ
+  const showImage = !listenPrompt && !s.textOnly && hasWordVisual(word)
+  const showMeaning = !listenPrompt
   const cloze = item.mode === 'cloze' ? makeCloze(word.example, word.word) : null
   const total = s.queue.length
   const wpm = calcWpm(s.correctKeystrokes, s.activeMs)
@@ -188,6 +199,11 @@ function Runner(): ReactNode {
             <span className="emoji mr-1">{info.icon}</span>
             {info.title}
             {topic && <span className="font-normal text-slate-500"> · {topic.name}</span>}
+            {s.textOnly && (
+              <span className="ml-2 align-middle">
+                <Badge tone="slate">Chỉ chữ</Badge>
+              </span>
+            )}
           </div>
           {s.kind === 'lesson' && (
             <div className="text-xs text-slate-500">
@@ -206,7 +222,7 @@ function Runner(): ReactNode {
             {s.index + 1}/{total}
           </span>
         </div>
-        <div className="flex gap-4 text-sm tabular-nums">
+        <div className="flex items-center gap-4 text-sm tabular-nums">
           <span title="Tốc độ gõ (từ/phút)">
             <b>{wpm}</b> <span className="text-slate-500">WPM</span>
           </span>
@@ -228,15 +244,14 @@ function Runner(): ReactNode {
           </div>
 
           <div className="flex flex-col items-center text-center">
-            {showImage ? (
-              <WordImage word={word} size="lg" />
-            ) : (
-              <SpeakButton text={word.word} big />
-            )}
+            {listenPrompt && <SpeakButton text={word.word} big />}
+            {showImage && <WordImage word={word} size="lg" />}
 
             {reveal && (
-              <div className="mt-4 flex items-center gap-2">
-                <span data-role="word" className="text-4xl font-bold tracking-tight">{word.word}</span>
+              <div className={cx('flex items-center gap-2', showImage && 'mt-4')}>
+                <span data-role="word" className={cx('font-bold tracking-tight', showImage ? 'text-4xl' : 'text-5xl')}>
+                  {word.word}
+                </span>
                 <SpeakButton text={word.word} />
               </div>
             )}
@@ -246,7 +261,13 @@ function Runner(): ReactNode {
               </div>
             )}
             {showMeaning && (
-              <div data-role="meaning" className={cx('font-semibold text-indigo-700 dark:text-indigo-300', reveal ? 'mt-2 text-xl' : 'mt-5 text-3xl')}>
+              <div
+                data-role="meaning"
+                className={cx(
+                  'font-semibold text-indigo-700 dark:text-indigo-300',
+                  reveal ? 'mt-2 text-xl' : showImage ? 'mt-5 text-3xl' : 'text-4xl'
+                )}
+              >
                 {word.meaningVi}
               </div>
             )}
@@ -382,21 +403,30 @@ function Summary(): ReactNode {
   }, [s.results, s.words])
 
   const wrongWords = perWord.filter((p) => p.wrong).map((p) => p.word)
+  const opts = { textOnly: s.textOnly }
+  // Phiên "Gõ chữ" quay về trang Gõ chữ thay vì trang chủ đề (có ảnh)
+  const topicPath = s.topicId
+    ? s.textOnly
+      ? `/typing?topic=${encodeURIComponent(s.topicId)}`
+      : `/topics/${s.topicId}`
+    : s.textOnly
+      ? '/typing'
+      : '/'
 
+  // Trạng thái phiên được dọn khi màn luyện tập unmount (xem Practice()).
   const leave = (to: string): void => {
-    usePractice.getState().reset()
-    navigate(to)
+    void navigate(to)
   }
 
   const nextLesson = async (): Promise<void> => {
     if (!s.topicId) return
     const words = await db.words.where('topicId').equals(s.topicId).sortBy('createdAt')
     const progress = new Map((await db.progress.where('topicId').equals(s.topicId).toArray()).map((p) => [p.wordId, p]))
-    await launchSession(navigate, 'lesson', s.topicId, pickLessonWords(words, progress, lessonSize))
+    await launchSession(navigate, 'lesson', s.topicId, pickLessonWords(words, progress, lessonSize), opts)
   }
 
   if (s.results.length === 0) {
-    return <Navigate to={s.topicId ? `/topics/${s.topicId}` : '/'} replace />
+    return <Navigate to={topicPath} replace />
   }
 
   const perfect = wrongWords.length === 0
@@ -419,7 +449,7 @@ function Summary(): ReactNode {
 
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         {wrongWords.length > 0 && (
-          <Button variant="primary" size="lg" onClick={() => void launchSession(navigate, 'retry', s.topicId, wrongWords)}>
+          <Button variant="primary" size="lg" onClick={() => void launchSession(navigate, 'retry', s.topicId, wrongWords, opts)}>
             🎯 Luyện lại {wrongWords.length} từ sai
           </Button>
         )}
@@ -429,8 +459,8 @@ function Summary(): ReactNode {
           </Button>
         )}
         {s.topicId && (
-          <Button size="lg" onClick={() => leave(`/topics/${s.topicId}`)}>
-            📚 Về chủ đề
+          <Button size="lg" onClick={() => leave(topicPath)}>
+            {s.textOnly ? '🔤 Về trang Gõ chữ' : '📚 Về chủ đề'}
           </Button>
         )}
         <Button size="lg" variant="ghost" onClick={() => leave('/')}>
@@ -443,7 +473,7 @@ function Summary(): ReactNode {
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
           {perWord.map(({ word, wrong, tested, learned, promoted }) => (
             <li key={word.id} className="flex items-center gap-4 px-5 py-3">
-              <WordImage word={word} size="sm" />
+              {!s.textOnly && <WordImage word={word} size="sm" />}
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">
                   {word.word} <span className="font-normal text-slate-500">{word.ipa}</span>

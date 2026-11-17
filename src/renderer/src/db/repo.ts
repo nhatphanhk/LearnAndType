@@ -2,6 +2,7 @@ import { db } from './schema'
 import { builtinEntities, BUILTIN_VERSION } from '@/data/builtin'
 import { applyReview, newProgress, type ReviewResult } from '@/core/srs'
 import type { CsvWord } from '@/core/csv'
+import { normalizeName, type Target } from '@/core/classify'
 import type { Attempt, PracticeMode, Session, SessionKind, StoredImage, Topic, Word, WordProgress } from '@/types'
 
 const uid = (): string => crypto.randomUUID()
@@ -30,10 +31,16 @@ export async function ensureSeed(now = Date.now()): Promise<void> {
 
 /* ---------------------------------- Phiên học ---------------------------------- */
 
-export async function startSession(kind: SessionKind, topicId: string | null, now = Date.now()): Promise<number> {
+export async function startSession(
+  kind: SessionKind,
+  topicId: string | null,
+  now = Date.now(),
+  textOnly = false
+): Promise<number> {
   const id = await db.sessions.add({
     kind,
     topicId,
+    ...(textOnly ? { textOnly: true } : {}),
     startedAt: now,
     endedAt: now,
     activeMs: 0,
@@ -127,7 +134,7 @@ export async function createTopic(input: TopicInput, now = Date.now()): Promise<
     id,
     name: input.name.trim(),
     nameEn: input.nameEn.trim(),
-    emoji: input.emoji.trim() || '📘',
+    emoji: input.emoji.trim(),
     description: input.description?.trim() ?? '',
     isBuiltIn: false,
     order: (last?.order ?? 0) + 1,
@@ -142,7 +149,7 @@ export async function updateTopic(id: string, input: TopicInput): Promise<void> 
   await db.topics.update(id, {
     name: input.name.trim(),
     nameEn: input.nameEn.trim(),
-    emoji: input.emoji.trim() || '📘',
+    emoji: input.emoji.trim(),
     description: input.description?.trim() ?? ''
   })
 }
@@ -234,20 +241,26 @@ export async function deleteWord(id: string): Promise<void> {
   })
 }
 
+/** Thêm / cập nhật nhiều từ. Dòng thiếu từ hoặc nghĩa bị bỏ qua (đếm trong `skipped`). */
 export async function importWords(
   topicId: string,
   rows: readonly CsvWord[],
   now = Date.now()
-): Promise<{ added: number; updated: number }> {
+): Promise<{ added: number; updated: number; skipped: number }> {
   await assertCustomTopic(topicId)
   return db.transaction('rw', [db.words], async () => {
     const existing = await db.words.where('topicId').equals(topicId).toArray()
     const byWord = new Map(existing.map((w) => [w.word.toLowerCase(), w]))
     let added = 0
     let updated = 0
+    let skipped = 0
     const puts: Word[] = []
     rows.forEach((row, i) => {
       const data = cleanWord(row)
+      if (!data.word || !data.meaningVi) {
+        skipped++
+        return
+      }
       const old = byWord.get(data.word.toLowerCase())
       if (old) {
         // Ô trống trong CSV không xóa dữ liệu đã có
@@ -262,7 +275,73 @@ export async function importWords(
       }
     })
     await db.words.bulkPut(puts)
-    return { added, updated }
+    return { added, updated, skipped }
+  })
+}
+
+export interface TopicImportResult {
+  topicId: string
+  name: string
+  /** Chủ đề vừa được tạo trong lần nhập này. */
+  created: boolean
+  added: number
+  updated: number
+  skipped: number
+}
+
+/**
+ * Nhập từ vào nhiều chủ đề (sau khi phân loại) trong một transaction.
+ * Chủ đề "mới" trùng tên (không phân biệt hoa thường / dấu) với chủ đề tự tạo đã có thì dùng lại.
+ */
+export async function importIntoTopics(
+  groups: readonly { target: Target; rows: readonly CsvWord[] }[],
+  now = Date.now()
+): Promise<TopicImportResult[]> {
+  return db.transaction('rw', [db.topics, db.words], async () => {
+    const custom = (await db.topics.toArray()).filter((t) => !t.isBuiltIn)
+    const byName = new Map(custom.map((t) => [normalizeName(t.name), t]))
+    const results = new Map<string, TopicImportResult>()
+    for (const { target, rows } of groups) {
+      if (rows.length === 0) continue
+      let topicId: string
+      let name: string
+      let created = false
+      if (target.kind === 'topic') {
+        const t = await db.topics.get(target.topicId)
+        if (!t) throw new Error('Chủ đề không tồn tại.')
+        topicId = t.id
+        name = t.name
+      } else {
+        const key = normalizeName(target.name)
+        const hit = byName.get(key)
+        if (hit) {
+          topicId = hit.id
+          name = hit.name
+        } else {
+          const input: TopicInput = {
+            name: target.name,
+            nameEn: target.nameEn,
+            emoji: target.emoji,
+            description: target.description
+          }
+          topicId = await createTopic(input, now)
+          name = input.name.trim()
+          created = true
+          byName.set(key, { ...input, id: topicId, isBuiltIn: false, order: 0, createdAt: now })
+        }
+      }
+      const r = await importWords(topicId, rows, now)
+      const prev = results.get(topicId)
+      results.set(topicId, {
+        topicId,
+        name,
+        created: created || !!prev?.created,
+        added: r.added + (prev?.added ?? 0),
+        updated: r.updated + (prev?.updated ?? 0),
+        skipped: r.skipped + (prev?.skipped ?? 0)
+      })
+    }
+    return [...results.values()]
   })
 }
 

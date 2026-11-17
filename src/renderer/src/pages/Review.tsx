@@ -6,7 +6,7 @@ import { useNow, useTopics } from '@/hooks/useData'
 import { Badge, Button, Card, EmptyState, PageHeader } from '@/components/ui'
 import { WordImage } from '@/components/WordImage'
 import { BOX_INTERVALS_DAYS } from '@/core/srs'
-import { formatDue } from '@/labels'
+import { formatDue, topicLabel } from '@/labels'
 import { launchSession } from '@/launch'
 import type { Word } from '@/types'
 
@@ -65,7 +65,7 @@ export default function Review(): ReactNode {
                 const t = topicName.get(tid)
                 return (
                   <Badge key={tid} tone="amber">
-                    {t ? `${t.emoji} ${t.name}` : tid}: {n}
+                    {t ? topicLabel(t) : tid}: {n}
                   </Badge>
                 )
               })}

@@ -1,12 +1,13 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { canCloze, pickLessonWords, pickPracticeWords } from '@/core/queue'
+import { canCloze, pickWordsForKind } from '@/core/queue'
 import { isDue } from '@/core/srs'
 import { topicProgress } from '@/core/stats'
 import { useNow, useProgressMap, useTopic, useWords } from '@/hooks/useData'
 import { speak } from '@/hooks/useSpeech'
 import { useSettings } from '@/store/settingsStore'
 import { WordImage } from '@/components/WordImage'
+import { TopicIcon } from '@/components/TopicIcon'
 import { Badge, Button, Card, EmptyState, ProgressBar, StatTile, cx } from '@/components/ui'
 import { KIND_INFO, formatDue, posLabel, statusBadge } from '@/labels'
 import { launchSession } from '@/launch'
@@ -51,12 +52,7 @@ export default function TopicDetail(): ReactNode {
   const clozeCount = words.filter(canCloze).length
 
   const start = (kind: SessionKind): void => {
-    let list
-    if (kind === 'lesson' || kind === 'copy') list = pickLessonWords(words, progress, lessonSize)
-    else if (kind === 'review') list = dueWords
-    else if (kind === 'cloze') list = pickPracticeWords(words.filter(canCloze), progress, lessonSize)
-    else list = pickPracticeWords(words, progress, lessonSize)
-    void launchSession(navigate, kind, topic.id, list)
+    void launchSession(navigate, kind, topic.id, pickWordsForKind(kind, words, progress, lessonSize, now))
   }
 
   const modes: { kind: SessionKind; note: string; disabled?: boolean }[] = [
@@ -110,8 +106,8 @@ export default function TopicDetail(): ReactNode {
         ← Tất cả chủ đề
       </Link>
       <div className="mt-3 mb-6 flex flex-wrap items-center gap-5">
-        <div className="emoji flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 text-5xl dark:bg-indigo-950">
-          {topic.emoji}
+        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 text-5xl dark:bg-indigo-950">
+          <TopicIcon topic={topic} />
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{topic.name}</h1>
@@ -135,7 +131,17 @@ export default function TopicDetail(): ReactNode {
         <StatTile label="Cần ôn" value={dueWords.length} icon="⏰" tone="amber" />
       </div>
 
-      <h2 className="mt-8 mb-3 text-lg font-semibold">Chọn chế độ luyện gõ</h2>
+      <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-x-6">
+        <h2 className="text-lg font-semibold">Chọn chế độ luyện gõ</h2>
+        {words.length > 0 && (
+          <Link
+            to={`/typing?topic=${encodeURIComponent(topic.id)}`}
+            className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+          >
+            🔤 Gõ chỉ chữ (không hình ảnh) →
+          </Link>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {modes.map((m) => {
           const info = KIND_INFO[m.kind]

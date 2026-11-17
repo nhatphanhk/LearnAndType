@@ -34,6 +34,14 @@ describe('parseWordsCsv', () => {
     expect(r.rows).toHaveLength(1)
     expect(r.errors).toHaveLength(2)
   })
+
+  it('file chỉ 2 cột word, meaning: không có ảnh hay icon', () => {
+    const r = parseWordsCsv('word,meaning\nlaptop,máy tính xách tay\n')
+    expect(r.errors).toEqual([])
+    expect(r.rows).toEqual([
+      { word: 'laptop', meaningVi: 'máy tính xách tay', ipa: '', partOfSpeech: '', emoji: '', example: '', exampleVi: '' }
+    ])
+  })
 })
 
 describe('wordsToCsv', () => {

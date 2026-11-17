@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { topicProgress } from '@/core/stats'
 import { groupByTopic, useNow, useProgressMap, useTopics, useWords } from '@/hooks/useData'
 import { Badge, Button, Card, PageHeader, ProgressBar } from '@/components/ui'
+import { TopicIcon } from '@/components/TopicIcon'
 
 export default function Topics(): ReactNode {
   const topics = useTopics()
@@ -38,8 +39,8 @@ export default function Topics(): ReactNode {
             <Link key={t.id} to={`/topics/${t.id}`} className="group">
               <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:ring-indigo-300 dark:group-hover:ring-indigo-700">
                 <div className="flex items-start gap-4">
-                  <div className="emoji flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-3xl dark:bg-indigo-950">
-                    {t.emoji}
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-3xl dark:bg-indigo-950">
+                    <TopicIcon topic={t} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

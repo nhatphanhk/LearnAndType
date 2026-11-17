@@ -25,6 +25,8 @@ interface PracticeData {
   status: 'idle' | 'running' | 'finished'
   kind: SessionKind
   topicId: string | null
+  /** Phiên chỉ chữ (trang "Gõ chữ"): không hiện hình ảnh/emoji của từ. */
+  textOnly: boolean
   sessionId: number | null
   words: Record<string, Word>
   queue: QueueItem[]
@@ -51,8 +53,12 @@ interface PracticeData {
   results: ItemResult[]
 }
 
+export interface StartOptions {
+  textOnly?: boolean
+}
+
 interface PracticeActions {
-  start: (kind: SessionKind, topicId: string | null, words: Word[]) => Promise<void>
+  start: (kind: SessionKind, topicId: string | null, words: Word[], opts?: StartOptions) => Promise<void>
   input: (value: string) => Promise<void>
   submit: () => Promise<void>
   hint: () => Promise<void>
@@ -67,6 +73,7 @@ const initial: PracticeData = {
   status: 'idle',
   kind: 'lesson',
   topicId: null,
+  textOnly: false,
   sessionId: null,
   words: {},
   queue: [],
@@ -177,16 +184,18 @@ export const usePractice = create<PracticeState>()((set, get) => {
   return {
     ...initial,
 
-    async start(kind, topicId, words) {
+    async start(kind, topicId, words, opts = {}) {
       const queue = buildQueue(kind, words)
       if (queue.length === 0) return
       const now = Date.now()
-      const sessionId = await startSession(kind, topicId, now)
+      const textOnly = opts.textOnly ?? false
+      const sessionId = await startSession(kind, topicId, now, textOnly)
       set({
         ...initial,
         status: 'running',
         kind,
         topicId,
+        textOnly,
         sessionId,
         words: Object.fromEntries(words.map((w) => [w.id, w])),
         queue,

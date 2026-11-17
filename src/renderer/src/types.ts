@@ -67,6 +67,8 @@ export interface Session {
   accuracy: number
   newWordsLearned: number
   promoted: number
+  /** Phiên luyện ở trang "Gõ chữ": không hiện hình ảnh/emoji của từ. */
+  textOnly?: boolean
 }
 
 export interface Attempt {

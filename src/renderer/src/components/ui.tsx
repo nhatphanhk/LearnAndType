@@ -215,7 +215,8 @@ export function Modal({
   title: string
   onClose: () => void
   children: ReactNode
-  wide?: boolean
+  /** true: rộng vừa (form), "xl": rất rộng (bảng). */
+  wide?: boolean | 'xl'
 }): ReactNode {
   if (!open) return null
   return (
@@ -230,7 +231,7 @@ export function Modal({
         aria-label={title}
         className={cx(
           'animate-pop max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900',
-          wide ? 'max-w-2xl' : 'max-w-md'
+          wide === 'xl' ? 'max-w-5xl' : wide ? 'max-w-2xl' : 'max-w-md'
         )}
       >
         <div className="mb-4 flex items-center justify-between">

@@ -1,9 +1,15 @@
-import type { PracticeMode, SessionKind, WordProgress } from './types'
+import type { PracticeMode, SessionKind, Topic, WordProgress } from './types'
+
+/** Tên chủ đề dạng chữ, kèm emoji nếu chủ đề có. */
+export function topicLabel(t: Pick<Topic, 'emoji' | 'name'>): string {
+  const emoji = t.emoji?.trim()
+  return emoji ? `${emoji} ${t.name}` : t.name
+}
 
 export const KIND_INFO: Record<SessionKind, { title: string; icon: string; desc: string }> = {
   lesson: { title: 'Bài học', icon: '🎓', desc: 'Học từ mới: chép từng từ rồi tự nhớ lại cả nhóm.' },
-  copy: { title: 'Chép từ', icon: '⌨️', desc: 'Nhìn từ, phiên âm, nghĩa và ảnh rồi gõ lại.' },
-  recall: { title: 'Nhớ từ', icon: '🧠', desc: 'Chỉ thấy nghĩa và ảnh, tự gõ ra từ tiếng Anh.' },
+  copy: { title: 'Chép từ', icon: '⌨️', desc: 'Nhìn từ, phiên âm, nghĩa (và ảnh nếu có) rồi gõ lại.' },
+  recall: { title: 'Nhớ từ', icon: '🧠', desc: 'Chỉ thấy nghĩa (và ảnh nếu có), tự gõ ra từ tiếng Anh.' },
   listen: { title: 'Nghe & gõ', icon: '🎧', desc: 'Nghe phát âm và gõ lại từ nghe được.' },
   cloze: { title: 'Điền vào câu', icon: '🧩', desc: 'Điền từ còn thiếu vào câu ví dụ.' },
   review: { title: 'Ôn tập', icon: '🔁', desc: 'Ôn các từ đến hạn theo lịch lặp lại ngắt quãng.' },

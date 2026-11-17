@@ -108,6 +108,19 @@ describe('practice store', () => {
     expect(await db.sessions.count()).toBe(0)
   })
 
+  it('phiên Gõ chữ mang cờ textOnly vào state và bản ghi phiên', async () => {
+    const words = (await db.words.where('topicId').equals('food').limit(2).toArray()) as Word[]
+    await s().start('copy', 'food', words, { textOnly: true })
+    expect(s().textOnly).toBe(true)
+    expect((await db.sessions.get(s().sessionId!))?.textOnly).toBe(true)
+
+    // Phiên thường không bị ảnh hưởng bởi phiên trước
+    s().reset()
+    await s().start('copy', 'food', words)
+    expect(s().textOnly).toBe(false)
+    expect((await db.sessions.get(s().sessionId!))?.textOnly).toBeUndefined()
+  })
+
   it('Điền câu chấp nhận cả dạng có hậu tố', async () => {
     const carrot = (await db.words.get('fruits:carrot'))!
     expect(acceptsAnswer(carrot, 'cloze', 'carrot')).toBe(true)
