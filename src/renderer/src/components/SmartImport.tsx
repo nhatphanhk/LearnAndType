@@ -1,22 +1,27 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import type { CsvWord } from '@/core/csv'
 import { parseSmart } from '@/core/smartParse'
 import { extractVocab } from '@/core/extract'
 import { autofillRows, builtinTopicOf, needsLookup, type FillStatus } from '@/core/lookup'
 import {
-  CATEGORIES,
+  FALLBACK_TOPIC_NAME,
   buildClassifier,
-  categoryTarget,
+  buildTargetOptions,
   newTarget,
   targetKey,
   type Suggestion,
-  type Target
+  type Target,
+  type TargetOption
 } from '@/core/classify'
 import type { TopicImportResult } from '@/db/repo'
 import { groupByTopic, useTopics, useWords } from '@/hooks/useData'
 import { posLabel } from '@/labels'
 import { pickFile } from '@/download'
 import type { Topic, Word } from '@/types'
+import { GeminiError, classifyWithGemini, geminiErrorMessage } from '@/core/gemini'
+import { loadWordnetTopics, type WordnetTopics } from '@/core/wordnet'
+import { useSettings } from '@/store/settingsStore'
 import { toast } from './Toast'
 import { Badge, Button, Field, cx, inputCls } from './ui'
 
@@ -32,6 +37,8 @@ interface ReviewRow {
   definitions?: string[]
   /** Chủ đề người dùng tự chọn (targetKey) — không bị đoán lại. */
   manualTarget?: string
+  /** Chủ đề AI (Gemini) chọn cho từ không đoán được (targetKey). */
+  aiTarget?: string
 }
 
 /** Một nhóm từ lưu vào cùng một chủ đề. */
@@ -40,19 +47,12 @@ export interface ImportGroup {
   rows: CsvWord[]
 }
 
-interface TargetOption {
-  key: string
-  target: Target
-  label: string
-  isNew: boolean
-}
-
 const NO_TOPICS: readonly Topic[] = []
 const NO_WORDS: readonly Word[] = []
 const MAX_FILE_BYTES = 2 * 1024 * 1024
 const PREVIEW_ROWS = 5
 const PREVIEW_CHIPS = 40
-const DEFAULT_FALLBACK = newTarget('Từ vựng khác')
+const DEFAULT_FALLBACK = newTarget(FALLBACK_TOPIC_NAME)
 
 const LIST_PLACEHOLDER = `laptop - máy tính xách tay
 meeting (n) /ˈmiː.t̬ɪŋ/: cuộc họp
@@ -86,6 +86,22 @@ function applyPatch(d: CsvWord, patch: Partial<CsvWord>, originalWord: string): 
     }
   }
   return out
+}
+
+/** Mở hộp thoại chọn file từ vựng (.csv/.tsv/.txt) và đọc nội dung; null nếu hủy hoặc file không dùng được. */
+export async function readImportFile(): Promise<string | null> {
+  const f = await pickFile('.csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values')
+  if (!f) return null
+  if (f.size > MAX_FILE_BYTES) {
+    toast.error('File quá lớn (tối đa 2 MB).')
+    return null
+  }
+  const text = await f.text()
+  if (!text.trim()) {
+    toast.error(`File "${f.name}" trống.`)
+    return null
+  }
+  return text
 }
 
 /** Thông báo sau khi lưu (một hoặc nhiều chủ đề). */
@@ -130,6 +146,7 @@ export function SmartImport({
   withTopicName = false,
   fallback = DEFAULT_FALLBACK,
   classify = false,
+  initialText = '',
   submitLabel,
   onSubmit,
   onCancel
@@ -137,6 +154,8 @@ export function SmartImport({
   withTopicName?: boolean
   fallback?: Target
   classify?: boolean
+  /** Nội dung có sẵn (VD: file vừa chọn bằng nút "Nhập từ file"). */
+  initialText?: string
   submitLabel: string
   onSubmit: (groups: ImportGroup[], topicName: string) => Promise<void>
   onCancel: () => void
@@ -144,7 +163,7 @@ export function SmartImport({
   const [step, setStep] = useState<'input' | 'review'>('input')
   const [tab, setTab] = useState<Tab>('list')
   const [name, setName] = useState('')
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText)
   const [passage, setPassage] = useState('')
   const [rows, setRows] = useState<ReviewRow[]>([])
   const [classifyOn, setClassifyOn] = useState(classify)
@@ -153,7 +172,19 @@ export function SmartImport({
   const abortRef = useRef<AbortController | null>(null)
 
   // Đóng modal thì dừng tra
-  useEffect(() => () => abortRef.current?.abort(), [])
+  useEffect(
+    () => () => {
+      abortRef.current?.abort()
+      aiAbortRef.current?.abort()
+    },
+    []
+  )
+  const apiKey = useSettings((s) => s.geminiApiKey)
+  const aiAuto = useSettings((s) => s.aiClassify)
+  /** Số từ đang gửi cho AI (0 = không chạy). */
+  const [aiBusy, setAiBusy] = useState(0)
+  const aiAbortRef = useRef<AbortController | null>(null)
+  const aiTriedRef = useRef(new Set<string>())
 
   const topics = useTopics() ?? NO_TOPICS
   const allWords = useWords() ?? NO_WORDS
@@ -167,9 +198,22 @@ export function SmartImport({
     () => (withTopicName ? newTarget(topicName || 'Chủ đề mới') : fallback),
     [withTopicName, topicName, fallbackPropKey] // eslint-disable-line react-hooks/exhaustive-deps
   )
+  // Bảng chủ đề WordNet (offline, ~1 MB) — tải khi mở hộp nhập; chưa tải xong thì phân loại như cũ
+  const [wordnet, setWordnet] = useState<WordnetTopics | undefined>()
+  const [wordnetDone, setWordnetDone] = useState(false)
+  useEffect(() => {
+    let alive = true
+    loadWordnetTopics()
+      .then((m) => alive && setWordnet(m))
+      .catch(() => undefined)
+      .finally(() => alive && setWordnetDone(true))
+    return () => {
+      alive = false
+    }
+  }, [])
   const classifier = useMemo(
-    () => buildClassifier({ topics: customTopics, wordsByTopic, fallback: fallbackTarget }),
-    [customTopics, wordsByTopic, fallbackTarget]
+    () => buildClassifier({ topics: customTopics, wordsByTopic, fallback: fallbackTarget, wordnet }),
+    [customTopics, wordsByTopic, fallbackTarget, wordnet]
   )
   const fallbackResolved = useMemo(() => classifier.resolve(fallbackTarget), [classifier, fallbackTarget])
   const fallbackKey = targetKey(fallbackResolved)
@@ -202,37 +246,86 @@ export function SmartImport({
   }
 
   // Danh sách chủ đề để chọn: chủ đề của bạn + chủ đề mới (mẫu, tên trong CSV, dự phòng)
-  const options = new Map<string, TargetOption>()
-  for (const t of customTopics) {
-    options.set(`topic:${t.id}`, {
-      key: `topic:${t.id}`,
-      target: { kind: 'topic', topicId: t.id },
-      label: t.emoji ? `${t.emoji} ${t.name}` : t.name,
-      isNew: false
-    })
-  }
-  const addNew = (t: Target): void => {
-    const resolved = classifier.resolve(t)
-    const key = targetKey(resolved)
-    if (resolved.kind === 'new' && !options.has(key)) {
-      options.set(key, { key, target: resolved, label: `${resolved.emoji ? `${resolved.emoji} ` : ''}${resolved.name} (mới)`, isNew: true })
-    }
-  }
-  addNew(fallbackTarget)
+  const options = buildTargetOptions({
+    classifier,
+    topics: customTopics,
+    extra: [fallbackTarget, ...(classifyOn ? rows.map((r) => suggestionOf(r).target) : [])],
+    withCategories: classifyOn
+  })
   if (!options.has(fallbackKey)) {
     // Danh sách chủ đề chưa tải xong
     options.set(fallbackKey, { key: fallbackKey, target: fallbackResolved, label: 'Chủ đề hiện tại', isNew: false })
-  }
-  if (classifyOn) {
-    for (const r of rows) addNew(suggestionOf(r).target)
-    CATEGORIES.forEach((c) => addNew(categoryTarget(c)))
   }
 
   const targetOf = (r: ReviewRow): string => {
     if (!classifyOn) return fallbackKey
     if (r.manualTarget && options.has(r.manualTarget)) return r.manualTarget
+    if (r.aiTarget && options.has(r.aiTarget)) return r.aiTarget
     return targetKey(suggestionOf(r).target)
   }
+
+  /* ------------------------- AI phân loại (Gemini) ------------------------- */
+
+  const aiSig = (r: ReviewRow): string => `${r.data.word.trim().toLowerCase()}\u0001${r.data.meaningVi.trim()}`
+  // Từ bộ phân loại offline không đoán được (sẽ rơi vào chủ đề dự phòng)
+  const aiPending = classifyOn
+    ? rows.filter(
+        (r) =>
+          r.checked &&
+          !r.manualTarget &&
+          !(r.aiTarget && options.has(r.aiTarget)) &&
+          r.status !== 'loading' &&
+          r.data.word.trim() &&
+          suggestionOf(r).reason === 'fallback'
+      )
+    : []
+  const aiPendingKey = aiPending.map(aiSig).join('\u0002')
+
+  const runAi = async (list: readonly ReviewRow[]): Promise<void> => {
+    if (list.length === 0 || !apiKey) return
+    list.forEach((r) => aiTriedRef.current.add(aiSig(r)))
+    // Chủ đề AI được chọn: mọi chủ đề trừ chủ đề dự phòng
+    const topicsForAi = [...options.values()]
+      .filter((o) => o.key !== fallbackKey)
+      .map((o) => ({ key: o.key, label: o.label.replace(/ \(mới\)$/, '') }))
+    aiAbortRef.current?.abort()
+    const ctrl = new AbortController()
+    aiAbortRef.current = ctrl
+    setAiBusy(list.length)
+    try {
+      const picks = await classifyWithGemini(
+        list.map((r) => ({ word: r.data.word, meaningVi: r.data.meaningVi, definitions: r.definitions })),
+        topicsForAi,
+        { apiKey, signal: ctrl.signal }
+      )
+      const byKey = new Map(list.map((r, i) => [r.key, picks[i]]))
+      setRows((rs) => rs.map((r) => (byKey.get(r.key) ? { ...r, aiTarget: byKey.get(r.key)! } : r)))
+      const n = picks.filter(Boolean).length
+      if (n < list.length) toast.info(`AI đã phân loại ${n}/${list.length} từ; số còn lại giữ ở chủ đề dự phòng.`)
+    } catch (e) {
+      if (!ctrl.signal.aborted) {
+        const busy = e instanceof GeminiError && (e.kind === 'unavailable' || e.kind === 'quota')
+        toast.error(
+          busy
+            ? `${geminiErrorMessage(e)} Đã dùng phân loại offline — bấm "🤖 Phân loại bằng AI" để thử lại.`
+            : `Không phân loại bằng AI được: ${geminiErrorMessage(e)}`
+        )
+      }
+    } finally {
+      if (aiAbortRef.current === ctrl) {
+        aiAbortRef.current = null
+        setAiBusy(0)
+      }
+    }
+  }
+
+  // Tự gọi AI sau khi tra từ xong (mỗi từ một lần; bấm nút để thử lại)
+  useEffect(() => {
+    // Chờ WordNet tải xong, để chỉ gửi cho AI những từ offline thật sự không đoán được
+    if (step !== 'review' || !apiKey || !aiAuto || progress || aiBusy || !wordnetDone) return
+    const todo = aiPending.filter((r) => !aiTriedRef.current.has(aiSig(r)))
+    if (todo.length) void runAi(todo)
+  }, [step, apiKey, aiAuto, progress, aiBusy, aiPendingKey, wordnetDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* --------------------------------- Tra từ --------------------------------- */
 
@@ -243,11 +336,10 @@ export function SmartImport({
       (forClassify && r.status === 'idle' && !r.definitions && !r.data.topic && !builtinTopicOf(r.data.word)))
 
   const openFile = async (): Promise<void> => {
-    const f = await pickFile('.csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values')
-    if (!f) return
-    if (f.size > MAX_FILE_BYTES) return toast.error('File quá lớn (tối đa 2 MB).')
+    const t = await readImportFile()
+    if (t === null) return
     setTab('list')
-    setText(await f.text())
+    setText(t)
   }
 
   const fill = async (list: readonly ReviewRow[], forClassify: boolean): Promise<void> => {
@@ -325,7 +417,9 @@ export function SmartImport({
   const edit = (key: number, field: 'word' | 'meaningVi', value: string): void =>
     setRows((rs) =>
       rs.map((r) =>
-        r.key === key ? { ...r, data: { ...r.data, [field]: value }, status: field === 'word' ? 'idle' : r.status } : r
+        r.key === key
+          ? { ...r, data: { ...r.data, [field]: value }, status: field === 'word' ? 'idle' : r.status, aiTarget: undefined }
+          : r
       )
     )
 
@@ -557,6 +651,17 @@ export function SmartImport({
               ✨ Tra từ còn thiếu{lookupCount > 0 && ` (${lookupCount})`}
             </Button>
           )}
+          {classifyOn && apiKey && (aiBusy > 0 || aiPending.length > 0) && (
+            aiBusy > 0 ? (
+              <span className="text-sm text-indigo-600 dark:text-indigo-400" aria-live="polite" data-role="ai-status">
+                🤖 AI đang phân loại {aiBusy} từ…
+              </span>
+            ) : (
+              <Button size="sm" disabled={!!progress} onClick={() => void runAi(aiPending)}>
+                🤖 Phân loại bằng AI ({aiPending.length})
+              </Button>
+            )
+          )}
           <Button size="sm" variant="ghost" onClick={() => setRows((rs) => rs.map((r) => ({ ...r, checked: !allChecked })))}>
             {allChecked ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
           </Button>
@@ -569,6 +674,16 @@ export function SmartImport({
             className="h-full bg-indigo-500 transition-all"
             style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
           />
+        </div>
+      )}
+
+      {classifyOn && !apiKey && aiPending.length > 0 && (
+        <div className="text-sm text-slate-500" data-role="ai-hint">
+          {aiPending.length} từ chưa đoán được chủ đề (sẽ vào chủ đề dự phòng). Thêm <b>Gemini API key</b> trong{' '}
+          <Link to="/settings" className="text-indigo-600 hover:underline dark:text-indigo-400">
+            Cài đặt
+          </Link>{' '}
+          để AI tự phân loại.
         </div>
       )}
 
@@ -681,6 +796,9 @@ export function SmartImport({
                   <td className="py-1.5 pr-3 text-right">
                     <div className="flex flex-col items-end gap-1">
                       <StatusBadge status={r.status} />
+                      {classifyOn && !r.manualTarget && r.aiTarget && options.has(r.aiTarget) && (
+                        <Badge tone="indigo">🤖 AI</Badge>
+                      )}
                       {isDupe(r) && <Badge>Đã có</Badge>}
                     </div>
                   </td>
@@ -703,7 +821,7 @@ export function SmartImport({
         </Button>
         <div className="flex gap-2">
           <Button onClick={onCancel}>Hủy</Button>
-          <Button variant="primary" disabled={busy || !!progress || selected.length === 0} onClick={() => void submit()}>
+          <Button variant="primary" disabled={busy || !!progress || aiBusy > 0 || selected.length === 0} onClick={() => void submit()}>
             {submitLabel} ({selected.length})
           </Button>
         </div>

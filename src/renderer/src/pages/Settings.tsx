@@ -5,12 +5,82 @@ import { speak, speechSupported, useEnglishVoices } from '@/hooks/useSpeech'
 import { toast } from '@/components/Toast'
 import { Button, Card, Field, PageHeader, Toggle, cx, inputCls } from '@/components/ui'
 import { dateStamp, downloadText, pickFile } from '@/download'
+import { geminiErrorMessage, testGeminiKey } from '@/core/gemini'
 
 const THEMES: { value: ThemeSetting; label: string }[] = [
   { value: 'system', label: '🖥️ Theo hệ thống' },
   { value: 'light', label: '☀️ Sáng' },
   { value: 'dark', label: '🌙 Tối' }
 ]
+
+function AiSettings(): ReactNode {
+  const apiKey = useSettings((s) => s.geminiApiKey)
+  const aiClassify = useSettings((s) => s.aiClassify)
+  const set = useSettings((s) => s.set)
+  const [draft, setDraft] = useState(apiKey)
+  const [show, setShow] = useState(false)
+  const [testing, setTesting] = useState(false)
+
+  useEffect(() => setDraft(apiKey), [apiKey])
+
+  const save = (): void => {
+    set({ geminiApiKey: draft.trim() })
+    toast.success(draft.trim() ? 'Đã lưu Gemini API key.' : 'Đã xóa Gemini API key.')
+  }
+
+  const test = async (): Promise<void> => {
+    setTesting(true)
+    try {
+      await testGeminiKey(draft)
+      set({ geminiApiKey: draft.trim() })
+      toast.success('Key hoạt động — đã lưu.')
+    } catch (e) {
+      toast.error(geminiErrorMessage(e))
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <h2 className="font-semibold">🤖 Phân loại bằng AI (Gemini)</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Khi nhập & phân loại, những từ app không tự đoán được chủ đề sẽ được gửi cho Gemini (từ tiếng Anh, nghĩa tiếng Việt và
+        tên các chủ đề) để chọn chủ đề phù hợp. Key chỉ lưu trên máy này và không nằm trong file sao lưu. Lấy key miễn phí tại
+        Google AI Studio.
+      </p>
+      <Field label="Gemini API key">
+        <div className="flex flex-wrap gap-2">
+          <input
+            className={cx(inputCls, 'min-w-64 flex-1 font-mono')}
+            type={show ? 'text' : 'password'}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Dán API key…"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Gemini API key"
+          />
+          <Button onClick={() => setShow((v) => !v)}>{show ? '🙈 Ẩn' : '👁️ Hiện'}</Button>
+          <Button variant="primary" disabled={draft.trim() === apiKey} onClick={save}>
+            Lưu
+          </Button>
+          <Button disabled={!draft.trim() || testing} onClick={() => void test()}>
+            {testing ? 'Đang kiểm tra…' : 'Kiểm tra key'}
+          </Button>
+        </div>
+      </Field>
+      <Toggle
+        checked={aiClassify}
+        onChange={(v) => set({ aiClassify: v })}
+        label="Tự động phân loại bằng AI khi nhập"
+        description={
+          apiKey ? 'Tắt thì vẫn có nút "🤖 Phân loại bằng AI" trong bảng xem lại.' : 'Cần nhập API key ở trên.'
+        }
+      />
+    </Card>
+  )
+}
 
 export default function SettingsPage(): ReactNode {
   const s = useSettings()
@@ -174,6 +244,8 @@ export default function SettingsPage(): ReactNode {
           </div>
         )}
       </Card>
+
+      <AiSettings />
 
       <Card className="mt-6">
         <h2 className="font-semibold">Dữ liệu</h2>

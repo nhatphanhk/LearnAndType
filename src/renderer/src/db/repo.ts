@@ -289,6 +289,37 @@ export interface TopicImportResult {
   skipped: number
 }
 
+type TopicByName = Map<string, Topic>
+
+/**
+ * Chủ đề đích của một Target: chủ đề đã có theo id, hoặc chủ đề "mới" — trùng tên (không phân biệt hoa thường / dấu)
+ * với chủ đề tự tạo đã có thì dùng lại, nếu không thì tạo. Gọi bên trong transaction có bảng topics.
+ */
+async function resolveTargetTopic(
+  target: Target,
+  byName: TopicByName,
+  now: number
+): Promise<{ topicId: string; name: string; created: boolean }> {
+  if (target.kind === 'topic') {
+    const t = await db.topics.get(target.topicId)
+    if (!t) throw new Error('Chủ đề không tồn tại.')
+    if (t.isBuiltIn) throw new Error('Chỉ có thể thêm từ vào chủ đề do bạn tạo.')
+    return { topicId: t.id, name: t.name, created: false }
+  }
+  const key = normalizeName(target.name)
+  const hit = byName.get(key)
+  if (hit) return { topicId: hit.id, name: hit.name, created: false }
+  const input: TopicInput = { name: target.name, nameEn: target.nameEn, emoji: target.emoji, description: target.description }
+  const topicId = await createTopic(input, now)
+  byName.set(key, { ...input, description: input.description ?? '', id: topicId, isBuiltIn: false, order: 0, createdAt: now })
+  return { topicId, name: input.name.trim(), created: true }
+}
+
+async function customTopicsByName(): Promise<TopicByName> {
+  const custom = (await db.topics.toArray()).filter((t) => !t.isBuiltIn)
+  return new Map(custom.map((t) => [normalizeName(t.name), t]))
+}
+
 /**
  * Nhập từ vào nhiều chủ đề (sau khi phân loại) trong một transaction.
  * Chủ đề "mới" trùng tên (không phân biệt hoa thường / dấu) với chủ đề tự tạo đã có thì dùng lại.
@@ -298,38 +329,11 @@ export async function importIntoTopics(
   now = Date.now()
 ): Promise<TopicImportResult[]> {
   return db.transaction('rw', [db.topics, db.words], async () => {
-    const custom = (await db.topics.toArray()).filter((t) => !t.isBuiltIn)
-    const byName = new Map(custom.map((t) => [normalizeName(t.name), t]))
+    const byName = await customTopicsByName()
     const results = new Map<string, TopicImportResult>()
     for (const { target, rows } of groups) {
       if (rows.length === 0) continue
-      let topicId: string
-      let name: string
-      let created = false
-      if (target.kind === 'topic') {
-        const t = await db.topics.get(target.topicId)
-        if (!t) throw new Error('Chủ đề không tồn tại.')
-        topicId = t.id
-        name = t.name
-      } else {
-        const key = normalizeName(target.name)
-        const hit = byName.get(key)
-        if (hit) {
-          topicId = hit.id
-          name = hit.name
-        } else {
-          const input: TopicInput = {
-            name: target.name,
-            nameEn: target.nameEn,
-            emoji: target.emoji,
-            description: target.description
-          }
-          topicId = await createTopic(input, now)
-          name = input.name.trim()
-          created = true
-          byName.set(key, { ...input, id: topicId, isBuiltIn: false, order: 0, createdAt: now })
-        }
-      }
+      const { topicId, name, created } = await resolveTargetTopic(target, byName, now)
       const r = await importWords(topicId, rows, now)
       const prev = results.get(topicId)
       results.set(topicId, {
@@ -345,6 +349,81 @@ export async function importIntoTopics(
     // Không lưu được từ nào → báo lỗi (rollback chủ đề vừa tạo), tránh báo "thành công" giả
     if (!list.some((x) => x.added + x.updated > 0)) throw new Error('Không có từ nào được lưu (thiếu từ hoặc nghĩa).')
     return list
+  })
+}
+
+export interface TopicMoveResult {
+  topicId: string
+  name: string
+  created: boolean
+  /** Số từ chuyển sang (kể cả từ gộp vào từ trùng đã có). */
+  count: number
+}
+
+export interface MoveWordsResult {
+  /** Từ được chuyển nguyên vẹn (giữ id, tiến độ, ảnh). */
+  moved: number
+  /** Từ trùng với từ đã có ở chủ đề đích → gộp vào từ đó. */
+  merged: number
+  results: TopicMoveResult[]
+}
+
+/**
+ * Chuyển từ đã lưu sang chủ đề khác (phân loại lại) trong một transaction.
+ * Giữ id từ nên tiến độ SRS và ảnh đi theo; lịch sử lượt gõ (attempts) giữ nguyên.
+ * Chủ đề đích đã có từ trùng: giữ từ ở đích, điền ô trống bằng dữ liệu từ nguồn, chuyển tiến độ nếu đích chưa có, rồi xóa từ nguồn.
+ */
+export async function moveWords(
+  groups: readonly { target: Target; wordIds: readonly string[] }[],
+  now = Date.now()
+): Promise<MoveWordsResult> {
+  return db.transaction('rw', [db.topics, db.words, db.progress, db.images], async () => {
+    const byName = await customTopicsByName()
+    const results = new Map<string, TopicMoveResult>()
+    let moved = 0
+    let merged = 0
+    for (const { target, wordIds } of groups) {
+      if (wordIds.length === 0) continue
+      const { topicId, name, created } = await resolveTargetTopic(target, byName, now)
+      const existing = await db.words.where('topicId').equals(topicId).toArray()
+      const byWord = new Map(existing.map((w) => [w.word.toLowerCase(), w]))
+      let count = 0
+      for (const id of wordIds) {
+        const w = await db.words.get(id)
+        if (!w) throw new Error('Từ không tồn tại.')
+        if (w.isBuiltIn) throw new Error('Không thể chuyển từ có sẵn.')
+        if (w.topicId === topicId) continue
+        count++
+        const dup = byWord.get(w.word.toLowerCase())
+        if (!dup) {
+          await db.words.update(id, { topicId })
+          await db.progress.update(id, { topicId })
+          byWord.set(w.word.toLowerCase(), { ...w, topicId })
+          moved++
+          continue
+        }
+        // Gộp vào từ đã có ở đích: chỉ điền ô đang trống
+        const patch: Partial<Word> = {}
+        for (const k of ['meaningVi', 'ipa', 'partOfSpeech', 'emoji', 'example', 'exampleVi', 'imageUrl'] as const) {
+          if (!dup[k] && w[k]) patch[k] = w[k]
+        }
+        let imageKept = false
+        if (!dup.imageId && w.imageId) {
+          patch.imageId = w.imageId
+          imageKept = true
+        }
+        if (Object.keys(patch).length) await db.words.update(dup.id, patch)
+        const [srcProg, dstProg] = await Promise.all([db.progress.get(id), db.progress.get(dup.id)])
+        if (srcProg && !dstProg) await db.progress.put({ ...srcProg, wordId: dup.id, topicId })
+        await db.progress.delete(id)
+        if (w.imageId && !imageKept) await db.images.delete(w.imageId)
+        await db.words.delete(id)
+        merged++
+      }
+      const prev = results.get(topicId)
+      results.set(topicId, { topicId, name, created: created || !!prev?.created, count: count + (prev?.count ?? 0) })
+    }
+    return { moved, merged, results: [...results.values()].filter((r) => r.count > 0) }
   })
 }
 

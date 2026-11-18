@@ -15,7 +15,8 @@ import {
 import { useTopic, useTopics, useWords } from '@/hooks/useData'
 import { WordImage } from '@/components/WordImage'
 import { TopicIcon } from '@/components/TopicIcon'
-import { SmartImport, importMessage } from '@/components/SmartImport'
+import { SmartImport, importMessage, readImportFile } from '@/components/SmartImport'
+import { Reclassify, ReclassifyHint, isFallbackTopic } from '@/components/Reclassify'
 import { toast } from '@/components/Toast'
 import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, cx, inputCls } from '@/components/ui'
 import { POS_LABEL, posLabel } from '@/labels'
@@ -32,6 +33,14 @@ const SAMPLE_CSV =
   'laptop,máy tính xách tay\n' +
   'meeting,cuộc họp\n' +
   'deadline,hạn chót\n'
+
+/** Lưu file CSV mẫu về máy (đây là TẢI XUỐNG, không phải nhập). Tên có giờ để không ghi đè file của bạn. */
+function downloadSample(): void {
+  const d = new Date()
+  const hm = `${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`
+  downloadText(`mau-tu-vung-${dateStamp()}-${hm}.csv`, SAMPLE_CSV, 'text/csv')
+  toast.info("Đang lưu file mẫu về máy. Điền từ vào file rồi bấm 📂 Nhập từ file để đưa vào app. Đừng chọn ghi đè lên file từ vựng của bạn.")
+}
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
@@ -252,7 +261,12 @@ export default function Manage(): ReactNode {
   const topics = useTopics()
   const custom = (topics ?? []).filter((t) => !t.isBuiltIn)
   const [creating, setCreating] = useState(false)
-  const [importing, setImporting] = useState(false)
+  // null = đóng; chuỗi = nội dung có sẵn (rỗng khi mở để dán)
+  const [importing, setImporting] = useState<string | null>(null)
+  const importFile = async (): Promise<void> => {
+    const t = await readImportFile()
+    if (t !== null) setImporting(t)
+  }
 
   return (
     <div>
@@ -261,7 +275,8 @@ export default function Manage(): ReactNode {
         subtitle="Tạo chủ đề riêng, thêm từng từ hoặc nhập thông minh (dán danh sách, đoạn văn, file CSV) — ảnh và icon đều không bắt buộc."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setImporting(true)}>🗂️ Nhập & phân loại</Button>
+            <Button onClick={() => void importFile()}>📂 Nhập từ file</Button>
+            <Button onClick={() => setImporting('')}>🗂️ Nhập & phân loại</Button>
             <Button variant="primary" onClick={() => setCreating(true)}>
               ＋ Tạo chủ đề
             </Button>
@@ -291,19 +306,21 @@ export default function Manage(): ReactNode {
 
         {/* min-w-0: câu ví dụ dài (lấy từ đoạn văn) không được kéo rộng cột lưới */}
         <div className="min-w-0">
-          {id ? <TopicEditor id={id} /> : <Intro onCreate={() => setCreating(true)} onImport={() => setImporting(true)} />}
+          {id ? <TopicEditor id={id} /> : <Intro onCreate={() => setCreating(true)} onImport={() => setImporting('')} onImportFile={() => void importFile()} />}
         </div>
       </div>
 
-      <Modal open={importing} title="Nhập & phân loại vào chủ đề" onClose={() => setImporting(false)} wide="xl">
+      <Modal open={importing !== null} title="Nhập & phân loại vào chủ đề" onClose={() => setImporting(null)} wide="xl">
         <SmartImport
+          key={importing ?? ''}
           classify
+          initialText={importing ?? ''}
           submitLabel="Lưu vào chủ đề"
-          onCancel={() => setImporting(false)}
+          onCancel={() => setImporting(null)}
           onSubmit={async (groups) => {
             const res = await importIntoTopics(groups)
             toast.success(importMessage(res))
-            setImporting(false)
+            setImporting(null)
             if (res[0]) navigate(`/manage/${res[0].topicId}`)
           }}
         />
@@ -325,7 +342,15 @@ export default function Manage(): ReactNode {
   )
 }
 
-function Intro({ onCreate, onImport }: { onCreate: () => void; onImport: () => void }): ReactNode {
+function Intro({
+  onCreate,
+  onImport,
+  onImportFile
+}: {
+  onCreate: () => void
+  onImport: () => void
+  onImportFile: () => void
+}): ReactNode {
   return (
     <Card>
       <EmptyState icon="✍️" title="Tự xây bộ từ vựng của bạn">
@@ -336,8 +361,11 @@ function Intro({ onCreate, onImport }: { onCreate: () => void; onImport: () => v
           <Button variant="primary" onClick={onCreate}>
             ＋ Tạo chủ đề
           </Button>
+          <Button onClick={onImportFile}>📂 Nhập từ file</Button>
           <Button onClick={onImport}>🗂️ Nhập & phân loại</Button>
-          <Button onClick={() => downloadText('mau-tu-vung.csv', SAMPLE_CSV, 'text/csv')}>⬇️ Tải file CSV mẫu</Button>
+          <Button variant="ghost" onClick={downloadSample} title="Lưu file mẫu về máy để điền — nút này không nhập từ vào app">
+            ⬇️ Lưu file mẫu về máy
+          </Button>
         </div>
       </EmptyState>
       <CsvHelp />
@@ -378,8 +406,14 @@ function TopicEditor({ id }: { id: string }): ReactNode {
   const navigate = useNavigate()
   const [editingTopic, setEditingTopic] = useState(false)
   const [wordModal, setWordModal] = useState<{ word?: Word } | null>(null)
-  const [pasting, setPasting] = useState(false)
+  // null = đóng; chuỗi = nội dung có sẵn (file vừa chọn), rỗng khi mở để dán
+  const [pasting, setPasting] = useState<string | null>(null)
+  const importFile = async (): Promise<void> => {
+    const t = await readImportFile()
+    if (t !== null) setPasting(t)
+  }
   const [formKey, setFormKey] = useState(0)
+  const [reclassifying, setReclassifying] = useState(false)
 
   if (topic === null) {
     return (
@@ -406,6 +440,15 @@ function TopicEditor({ id }: { id: string }): ReactNode {
     navigate('/manage')
   }
 
+  const onReclassified = async (emptied: boolean): Promise<void> => {
+    setReclassifying(false)
+    if (!emptied) return
+    if (!window.confirm(`Chủ đề "${topic.name}" đã trống — xóa chủ đề này?`)) return
+    await deleteTopic(topic.id)
+    toast.success(`Đã xóa chủ đề "${topic.name}".`)
+    navigate('/manage')
+  }
+
   return (
     <div className="space-y-6">
       <Card className="flex flex-wrap items-center gap-4">
@@ -429,6 +472,10 @@ function TopicEditor({ id }: { id: string }): ReactNode {
         </div>
       </Card>
 
+      {isFallbackTopic(topic) && words.length > 0 && (
+        <ReclassifyHint topic={topic} words={words} onOpen={() => setReclassifying(true)} />
+      )}
+
       <Card className="p-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
           <h3 className="font-semibold">Danh sách từ</h3>
@@ -436,9 +483,17 @@ function TopicEditor({ id }: { id: string }): ReactNode {
             <Button size="sm" variant="primary" onClick={() => setWordModal({})}>
               ＋ Thêm từ
             </Button>
-            <Button size="sm" onClick={() => setPasting(true)}>
+            <Button size="sm" onClick={() => void importFile()}>
+              📂 Nhập từ file
+            </Button>
+            <Button size="sm" onClick={() => setPasting('')}>
               ✨ Nhập thông minh
             </Button>
+            {words.length > 0 && (
+              <Button size="sm" onClick={() => setReclassifying(true)} title="Chuyển các từ sang chủ đề phù hợp (giữ tiến độ học)">
+                🗂️ Phân loại lại
+              </Button>
+            )}
             <Button
               size="sm"
               disabled={words.length === 0}
@@ -446,15 +501,15 @@ function TopicEditor({ id }: { id: string }): ReactNode {
             >
               ⬇️ Xuất CSV
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => downloadText('mau-tu-vung.csv', SAMPLE_CSV, 'text/csv')}>
-              File mẫu
+            <Button size="sm" variant="ghost" onClick={downloadSample} title="Lưu file mẫu về máy để điền — nút này không nhập từ vào app">
+              ⬇️ Lưu file mẫu
             </Button>
           </div>
         </div>
         {words.length === 0 ? (
           <div className="p-5">
             <EmptyState icon="📝" title="Chưa có từ nào">
-              Thêm từng từ, hoặc bấm ✨ Nhập thông minh để dán danh sách, trích từ đoạn văn hay mở file CSV.
+              Thêm từng từ, bấm 📂 Nhập từ file để mở file CSV / TXT, hoặc ✨ Nhập thông minh để dán danh sách hay trích từ đoạn văn.
             </EmptyState>
             <CsvHelp />
           </div>
@@ -496,16 +551,29 @@ function TopicEditor({ id }: { id: string }): ReactNode {
         )}
       </Card>
 
-      <Modal open={pasting} title={`Nhập thông minh vào "${topic.name}"`} onClose={() => setPasting(false)} wide="xl">
+      <Modal open={pasting !== null} title={`Nhập thông minh vào "${topic.name}"`} onClose={() => setPasting(null)} wide="xl">
         <SmartImport
+          key={pasting ?? ''}
+          initialText={pasting ?? ''}
           fallback={{ kind: 'topic', topicId: topic.id }}
           submitLabel="Lưu"
-          onCancel={() => setPasting(false)}
+          onCancel={() => setPasting(null)}
           onSubmit={async (groups) => {
             toast.success(importMessage(await importIntoTopics(groups)))
-            setPasting(false)
+            setPasting(null)
           }}
         />
+      </Modal>
+
+      <Modal open={reclassifying} title={`Phân loại lại từ trong "${topic.name}"`} onClose={() => setReclassifying(false)} wide="xl">
+        {reclassifying && (
+          <Reclassify
+            topic={topic}
+            words={words}
+            onCancel={() => setReclassifying(false)}
+            onDone={(_res, emptied) => void onReclassified(emptied)}
+          />
+        )}
       </Modal>
 
       <Modal open={editingTopic} title="Sửa chủ đề" onClose={() => setEditingTopic(false)}>

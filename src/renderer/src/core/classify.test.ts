@@ -3,6 +3,7 @@ import type { Topic, Word } from '@/types'
 import {
   CATEGORIES,
   buildClassifier,
+  buildTargetOptions,
   categorize,
   newTarget,
   normalizeName,
@@ -148,5 +149,18 @@ describe('buildClassifier', () => {
     expect(targetKey(newTarget('Kinh doanh'))).toBe(targetKey(newTarget('kinh DOANH')))
     expect(targetKey({ kind: 'topic', topicId: 'a' })).toBe('topic:a')
     expect(normalizeName('  Đồ ăn & thức uống ')).toBe('do an thuc uong')
+  })
+})
+
+describe('buildTargetOptions', () => {
+  it('chủ đề của tôi (trừ exclude) + chủ đề mẫu; chủ đề mới trùng tên được gộp', () => {
+    const topics = [topic('a', 'Văn phòng'), topic('b', 'Từ vựng khác')]
+    const classifier = buildClassifier({ topics, wordsByTopic: new Map(), fallback: newTarget('Từ vựng khác') })
+    const opts = buildTargetOptions({ classifier, topics, exclude: 'b', extra: [newTarget('văn PHÒNG'), newTarget('Riêng')], withCategories: true })
+    expect(opts.has('topic:a')).toBe(true)
+    expect(opts.has('topic:b')).toBe(false)
+    expect(opts.has('new:van phong')).toBe(false)
+    expect(opts.get('new:rieng')?.isNew).toBe(true)
+    expect([...opts.values()].filter((o) => o.isNew)).toHaveLength(1 + CATEGORIES.length)
   })
 })

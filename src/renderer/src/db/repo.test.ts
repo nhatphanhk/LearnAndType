@@ -11,6 +11,7 @@ import {
   importBackup,
   importIntoTopics,
   importWords,
+  moveWords,
   recordAttempt,
   resetProgress,
   startSession,
@@ -225,5 +226,77 @@ describe('sao lưu / khôi phục', () => {
     expect(await db.sessions.count()).toBe(1)
     expect(await db.images.count()).toBe(1)
     expect(await db.topics.count()).toBe(13)
+  })
+})
+
+describe('moveWords (phân loại lại)', () => {
+  const blank = { ipa: '', partOfSpeech: '', emoji: '', example: '', exampleVi: '' }
+  const r = (word: string, meaningVi: string, extra: Partial<typeof blank> = {}) => ({ word, meaningVi, ...blank, ...extra })
+
+  const setup = async () => {
+    await ensureSeed(NOW)
+    const other = await createTopic({ name: 'Từ vựng khác', nameEn: '', emoji: '' }, NOW)
+    const law = await createTopic({ name: 'Pháp luật', nameEn: '', emoji: '⚖️' }, NOW)
+    await importWords(other, [r('verdict', 'phán quyết'), r('violin', 'đàn vi-ô-lông'), r('judge', '', {}), r('jury', 'bồi thẩm đoàn', { ipa: '/ˈdʒʊr.i/' })], NOW)
+    await importWords(law, [r('jury', 'bồi thẩm', {})], NOW)
+    const words = await db.words.where('topicId').equals(other).toArray()
+    const id = (w: string) => words.find((x) => x.word === w)!.id
+    return { other, law, id }
+  }
+
+  it('giữ id, đổi topicId của từ và tiến độ; chủ đề mới tạo một lần và gộp theo tên', async () => {
+    const { other, law, id } = await setup()
+    const session = await startSession('lesson', other, NOW)
+    const verdict = (await db.words.get(id('verdict')))!
+    await recordAttempt({ sessionId: session, word: verdict, mode: 'copy', correct: true, hinted: false, errors: 0, durationMs: 900 }, NOW)
+    const res = await moveWords(
+      [
+        { target: { kind: 'topic', topicId: law }, wordIds: [id('verdict')] },
+        { target: newTarget('Nghệ thuật', { emoji: '🎨' }), wordIds: [id('violin')] },
+        { target: newTarget('NGHE THUAT'), wordIds: [] }
+      ],
+      NOW
+    )
+    expect(res).toMatchObject({ moved: 2, merged: 0 })
+    expect(res.results.map((x) => [x.name, x.created, x.count])).toEqual([
+      ['Pháp luật', false, 1],
+      ['Nghệ thuật', true, 1]
+    ])
+    expect((await db.words.get(id('verdict')))?.topicId).toBe(law)
+    expect((await db.progress.get(id('verdict')))?.topicId).toBe(law)
+    // Lịch sử lượt gõ giữ nguyên
+    expect((await db.attempts.toArray())[0].topicId).toBe(other)
+    expect((await db.topics.toArray()).filter((t) => t.name === 'Nghệ thuật')).toHaveLength(1)
+    expect(await db.words.where('topicId').equals(other).count()).toBe(1)
+  })
+
+  it('từ trùng ở chủ đề đích: gộp ô trống, chuyển tiến độ, xóa từ nguồn', async () => {
+    const { other, law, id } = await setup()
+    const jurySrc = id('jury')
+    const session = await startSession('lesson', other, NOW)
+    await recordAttempt({ sessionId: session, word: (await db.words.get(jurySrc))!, mode: 'copy', correct: true, hinted: false, errors: 0, durationMs: 900 }, NOW)
+    const res = await moveWords([{ target: { kind: 'topic', topicId: law }, wordIds: [jurySrc] }], NOW)
+    expect(res).toMatchObject({ moved: 0, merged: 1 })
+    expect(await db.words.get(jurySrc)).toBeUndefined()
+    expect(await db.progress.get(jurySrc)).toBeUndefined()
+    const dst = (await db.words.where('topicId').equals(law).toArray()).find((w) => w.word === 'jury')!
+    expect(dst.meaningVi).toBe('bồi thẩm') // không ghi đè ô đã có
+    expect(dst.ipa).toBe('/ˈdʒʊr.i/') // điền ô trống
+    expect((await db.progress.get(dst.id))?.topicId).toBe(law)
+  })
+
+  it('không chuyển vào chủ đề có sẵn, không thay đổi gì khi lỗi', async () => {
+    const { other, id } = await setup()
+    await expect(
+      moveWords(
+        [
+          { target: newTarget('Tạm'), wordIds: [id('verdict')] },
+          { target: { kind: 'topic', topicId: 'animals' }, wordIds: [id('violin')] }
+        ],
+        NOW
+      )
+    ).rejects.toThrow()
+    expect(await db.words.where('topicId').equals(other).count()).toBe(3)
+    expect((await db.topics.toArray()).some((t) => t.name === 'Tạm')).toBe(false)
   })
 })

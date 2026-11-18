@@ -13,6 +13,10 @@ export interface Settings {
   autoAdvance: boolean
   caseSensitive: boolean
   soundEffects: boolean
+  /** Gemini API key (chỉ lưu trên máy này) — AI phân loại từ không đoán được chủ đề. */
+  geminiApiKey: string
+  /** Tự gọi AI khi nhập & phân loại (nếu có key). */
+  aiClassify: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -24,7 +28,9 @@ export const DEFAULT_SETTINGS: Settings = {
   hideLength: false,
   autoAdvance: false,
   caseSensitive: false,
-  soundEffects: true
+  soundEffects: true,
+  geminiApiKey: '',
+  aiClassify: true
 }
 
 interface SettingsStore extends Settings {
@@ -59,7 +65,8 @@ export const useSettings = create<SettingsStore>()(
     (set) => ({
       ...DEFAULT_SETTINGS,
       set: (patch) => set(patch),
-      reset: () => set(DEFAULT_SETTINGS)
+      // Khôi phục mặc định không xóa API key đã nhập
+      reset: () => set((s) => ({ ...DEFAULT_SETTINGS, geminiApiKey: s.geminiApiKey }))
     }),
     {
       name: 'learn-and-type:settings',

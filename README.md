@@ -171,3 +171,7 @@ Công nghệ: Electron · electron-vite · React · TypeScript · Tailwind CSS �
 ## Giấy phép
 
 MIT
+
+Phân loại chủ đề offline dùng dữ liệu sinh từ **WordNet 3.1** (`src/renderer/src/data/wordnet-topics.json`, tạo lại bằng `npm run build:wordnet`):
+
+> WordNet 3.1 Copyright 2011 by Princeton University. All rights reserved. Princeton University. "About WordNet." WordNet. Princeton University. 2010. — phát hành theo [WordNet License](https://wordnet.princeton.edu/license-and-commercial-use).

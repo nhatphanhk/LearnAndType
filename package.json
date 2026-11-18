@@ -15,6 +15,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
+    "build:wordnet": "node scripts/build-wordnet-topics.mjs",
     "test:watch": "vitest",
     "build:win": "npm run build && electron-builder --win"
   },
@@ -42,7 +43,8 @@
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "wordnet-db": "3.1.14"
   },
   "allowScripts": {
     "electron@45.3.3": true,

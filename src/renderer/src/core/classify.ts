@@ -2,6 +2,7 @@ import { BUILTIN_TOPICS } from '@/data/builtin'
 import type { Topic, Word } from '@/types'
 import { pluralBases } from './extract'
 import { builtinTopicOf } from './lookup'
+import { wordnetTopicOf, type WordnetTopics } from './wordnet'
 
 /**
  * Phân loại từ vào chủ đề khi nhập (offline + định nghĩa tiếng Anh nếu đã tra được).
@@ -382,11 +383,16 @@ export interface CategoryGuess {
 const MIN_SCORE = 2
 
 /**
- * Chấm điểm từng chủ đề mẫu: từ có sẵn +10, chính từ là từ khóa +4, nghĩa tiếng Việt +2/âm tiết khớp
- * (tối đa 8), định nghĩa tiếng Anh +1/từ khóa (tối đa 5), câu ví dụ +0.5/từ khóa (tối đa 2).
+ * Chấm điểm từng chủ đề mẫu: từ có sẵn +10, WordNet +5 (chỉ khớp chữ cuối của cụm: +2), chính từ là từ khóa +4,
+ * nghĩa tiếng Việt +2/âm tiết khớp (tối đa 8), định nghĩa tiếng Anh +1/từ khóa (tối đa 5), câu ví dụ +0.5/từ khóa (tối đa 2).
  * `prefer`: chủ đề mẫu đã có chủ đề người dùng tương ứng → +2 khi đã có bằng chứng (ưu tiên chủ đề của bạn).
+ * `wordnet`: bảng chủ đề WordNet (tải lười, xem core/wordnet.ts) — không có thì bỏ qua.
  */
-export function categorize(input: ClassifyInput, prefer: ReadonlySet<string> = new Set()): CategoryGuess | null {
+export function categorize(
+  input: ClassifyInput,
+  prefer: ReadonlySet<string> = new Set(),
+  wordnet?: WordnetTopics
+): CategoryGuess | null {
   const score = new Map<string, number>()
   const add = (id: string, n: number): void => {
     score.set(id, (score.get(id) ?? 0) + n)
@@ -395,6 +401,8 @@ export function categorize(input: ClassifyInput, prefer: ReadonlySet<string> = n
   const word = input.word.trim()
   const builtin = builtinTopicOf(word)
   if (builtin && CATEGORY_BY_ID.has(builtin)) add(builtin, 10)
+  const wn = wordnet ? wordnetTopicOf(wordnet, word) : null
+  if (wn && CATEGORY_BY_ID.has(wn.topic)) add(wn.topic, wn.exact ? 5 : 2)
 
   const wordTokens = tokens(word)
   const whole = wordTokens.length === 1 ? enCategories(wordTokens[0]) : (EN_INDEX.get(word.toLowerCase()) ?? [])
@@ -438,7 +446,11 @@ export function categorize(input: ClassifyInput, prefer: ReadonlySet<string> = n
 }
 
 /** Chủ đề người dùng ứng với chủ đề mẫu nào: theo tên, nếu không thì theo đa số từ bên trong. */
-export function topicCategory(topic: Pick<Topic, 'name' | 'nameEn'>, words: readonly Pick<Word, 'word' | 'meaningVi'>[] = []): string | null {
+export function topicCategory(
+  topic: Pick<Topic, 'name' | 'nameEn'>,
+  words: readonly Pick<Word, 'word' | 'meaningVi'>[] = [],
+  wordnet?: WordnetTopics
+): string | null {
   const names = [normalizeName(topic.name), normalizeName(topic.nameEn ?? '')].filter(Boolean)
   for (const c of CATEGORIES) {
     const keys = [...c.aliases, normalizeName(c.name), normalizeName(c.nameEn)]
@@ -447,7 +459,7 @@ export function topicCategory(topic: Pick<Topic, 'name' | 'nameEn'>, words: read
   if (words.length < 3) return null
   const counts = new Map<string, number>()
   for (const wd of words) {
-    const g = categorize({ word: wd.word, meaningVi: wd.meaningVi })
+    const g = categorize({ word: wd.word, meaningVi: wd.meaningVi }, undefined, wordnet)
     if (g) counts.set(g.id, (counts.get(g.id) ?? 0) + 1)
   }
   let best: string | null = null
@@ -479,6 +491,9 @@ export function targetKey(t: Target): string {
   return t.kind === 'topic' ? `topic:${t.topicId}` : `new:${normalizeName(t.name)}`
 }
 
+/** Tên chủ đề dự phòng mặc định (từ không đoán được chủ đề). */
+export const FALLBACK_TOPIC_NAME = 'Từ vựng khác'
+
 export function newTarget(name: string, extra: Partial<Omit<Extract<Target, { kind: 'new' }>, 'kind' | 'name'>> = {}): Target {
   return { kind: 'new', name: name.trim(), nameEn: '', emoji: '', description: '', ...extra }
 }
@@ -493,6 +508,8 @@ export interface ClassifyContext {
   wordsByTopic: ReadonlyMap<string, readonly Word[]>
   /** Nơi lưu từ không đoán được chủ đề. */
   fallback: Target
+  /** Bảng chủ đề WordNet (nếu đã tải). */
+  wordnet?: WordnetTopics
 }
 
 export interface Classifier {
@@ -519,7 +536,7 @@ export function buildClassifier(ctx: ClassifyContext): Classifier {
   const categoryTopic = new Map<string, string>()
   const sizeOf = (id: string): number => ctx.wordsByTopic.get(id)?.length ?? 0
   for (const t of ctx.topics) {
-    const cat = topicCategory(t, ctx.wordsByTopic.get(t.id) ?? [])
+    const cat = topicCategory(t, ctx.wordsByTopic.get(t.id) ?? [], ctx.wordnet)
     if (!cat) continue
     const cur = categoryTopic.get(cat)
     if (!cur || sizeOf(t.id) > sizeOf(cur)) categoryTopic.set(cat, t.id)
@@ -536,7 +553,7 @@ export function buildClassifier(ctx: ClassifyContext): Classifier {
     if (row.topic?.trim()) return { target: resolve(newTarget(row.topic)), reason: 'csv' }
     const existing = wordTopic.get(row.word.trim().toLowerCase())
     if (existing) return { target: { kind: 'topic', topicId: existing }, reason: 'existing' }
-    const guess = categorize(row, prefer)
+    const guess = categorize(row, prefer, ctx.wordnet)
     if (guess) {
       const mine = categoryTopic.get(guess.id)
       if (mine) return { target: { kind: 'topic', topicId: mine }, reason: 'mine', categoryId: guess.id }
@@ -546,4 +563,43 @@ export function buildClassifier(ctx: ClassifyContext): Classifier {
   }
 
   return { suggest, categoryTopic, resolve }
+}
+
+/* ------------------------------ Danh sách chủ đề đích ------------------------------ */
+
+export interface TargetOption {
+  key: string
+  target: Target
+  label: string
+  /** Chủ đề sẽ được tạo khi lưu. */
+  isNew: boolean
+}
+
+/**
+ * Các chủ đề để chọn: chủ đề của tôi (trừ `exclude`) + chủ đề mới (`extra`, và mọi chủ đề mẫu nếu `withCategories`).
+ * Chủ đề "mới" trùng tên chủ đề đã có được gộp (qua `classifier.resolve`).
+ */
+export function buildTargetOptions(opts: {
+  classifier: Pick<Classifier, 'resolve'>
+  topics: readonly Pick<Topic, 'id' | 'name' | 'emoji'>[]
+  extra?: readonly Target[]
+  withCategories?: boolean
+  exclude?: string
+}): Map<string, TargetOption> {
+  const options = new Map<string, TargetOption>()
+  for (const t of opts.topics) {
+    if (t.id === opts.exclude) continue
+    const key = `topic:${t.id}`
+    options.set(key, { key, target: { kind: 'topic', topicId: t.id }, label: t.emoji ? `${t.emoji} ${t.name}` : t.name, isNew: false })
+  }
+  const addNew = (t: Target): void => {
+    const resolved = opts.classifier.resolve(t)
+    const key = targetKey(resolved)
+    if (resolved.kind === 'new' && !options.has(key)) {
+      options.set(key, { key, target: resolved, label: `${resolved.emoji ? `${resolved.emoji} ` : ''}${resolved.name} (mới)`, isNew: true })
+    }
+  }
+  opts.extra?.forEach(addNew)
+  if (opts.withCategories) CATEGORIES.forEach((c) => addNew(categoryTarget(c)))
+  return options
 }
