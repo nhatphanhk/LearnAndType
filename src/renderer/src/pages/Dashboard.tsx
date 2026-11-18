@@ -51,7 +51,8 @@ export default function Dashboard(): ReactNode {
   const suggestion =
     topicRows.find((r) => r.tp.learned > 0 && r.tp.learned < r.tp.total) ?? topicRows.find((r) => r.tp.learned < r.tp.total)
   const activeTopics = topicRows.filter((r) => r.tp.learned > 0).sort((a, b) => b.tp.learned / b.tp.total - a.tp.learned / a.tp.total)
-  const completedTopics = topicRows.filter((r) => r.tp.total > 0 && r.tp.mastered === r.tp.total).length
+  const myWordCount = words.filter((w) => !w.isBuiltIn).length
+  const completedTopics =topicRows.filter((r) => r.tp.total > 0 && r.tp.mastered === r.tp.total).length
 
   const startSuggestion = (): void => {
     if (!suggestion) return
@@ -92,7 +93,15 @@ export default function Dashboard(): ReactNode {
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="col-span-2 lg:col-span-1">
+          <StatTile
+            label="Tổng số từ vựng"
+            value={words.length.toLocaleString('vi-VN')}
+            icon="📚"
+            hint={`${myWordCount.toLocaleString('vi-VN')} của tôi · ${(words.length - myWordCount).toLocaleString('vi-VN')} có sẵn`}
+          />
+        </div>
         <StatTile label="Thời gian gõ" value={formatDuration(summary.totalMinutes * 60000)} hint={`${summary.totalSessions} phiên học`} />
         <StatTile label="Tốc độ TB" value={summary.avgWpm ?? '—'} hint="từ/phút (WPM)" />
         <StatTile label="Độ chính xác TB" value={summary.avgAccuracy !== null ? `${summary.avgAccuracy}%` : '—'} hint={`${summary.totalKeystrokes.toLocaleString('vi-VN')} phím đã gõ`} />

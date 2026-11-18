@@ -86,11 +86,15 @@ export function builtinTopicOf(word: string): string | null {
 
 /* ------------------------------- Gọi mạng ------------------------------- */
 
+const FETCH_TIMEOUT_MS = 10_000
+
 async function getJson(url: string, opts: LookupOptions): Promise<{ status: number; data: unknown }> {
   const f: FetchFn = opts.fetch ?? ((u, init) => fetch(u, init))
   let res: Response
+  // Mạng treo thì báo lỗi sau một lúc (không để nút "Lưu" bị khóa mãi vì "Đang tra…")
+  const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS)
   try {
-    res = await f(url, { signal: opts.signal })
+    res = await f(url, { signal: opts.signal ? AbortSignal.any([opts.signal, timeout]) : timeout })
   } catch (e) {
     if (isAbort(e)) throw e
     throw new NetworkError('Không kết nối được máy chủ.')

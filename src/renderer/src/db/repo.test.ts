@@ -143,6 +143,13 @@ describe('importIntoTopics (phân loại khi nhập)', () => {
     ).rejects.toThrow()
     expect((await db.topics.toArray()).filter((t) => !t.isBuiltIn)).toEqual([])
   })
+
+  it('báo lỗi khi không lưu được từ nào và không để lại chủ đề rỗng', async () => {
+    await ensureSeed(NOW)
+    await expect(importIntoTopics([{ target: newTarget('Rỗng'), rows: [r('', '')] }], NOW)).rejects.toThrow(/Không có từ nào/)
+    await expect(importIntoTopics([], NOW)).rejects.toThrow(/Không có từ nào/)
+    expect((await db.topics.toArray()).filter((t) => !t.isBuiltIn)).toEqual([])
+  })
 })
 
 describe('chủ đề & từ tự tạo', () => {

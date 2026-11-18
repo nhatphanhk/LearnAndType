@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#3730a3"/>
+    </linearGradient>
+  </defs>
+  <!-- Nền -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Phím bàn phím: thân phím (độ dày) + mặt phím -->
+  <rect x="96" y="112" width="320" height="296" rx="64" fill="#a5b4fc"/>
+  <rect x="96" y="88" width="320" height="296" rx="64" fill="#ffffff"/>
+  <!-- Chữ A -->
+  <path d="M178 294 L256 140 L334 294 M209 236 H303" fill="none" stroke="#4338ca"
+        stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Con trỏ gõ -->
+  <rect x="200" y="330" width="112" height="22" rx="11" fill="#10b981"/>
+</svg>

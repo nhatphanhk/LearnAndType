@@ -97,7 +97,8 @@ export function importMessage(results: readonly TopicImportResult[]): string {
     const r = results[0]
     return `Đã thêm ${r.added} từ${r.updated ? `, cập nhật ${r.updated} từ` : ''} vào "${r.name}"${r.created ? ' (chủ đề mới)' : ''}.`
   }
-  return `Đã lưu ${added + updated} từ vào ${results.length} chủ đề${created ? ` (${created} chủ đề mới)` : ''}.`
+  const names = results.map((r) => `"${r.name}"${r.created ? ' (mới)' : ''}`).join(', ')
+  return `Đã lưu ${added + updated} từ vào ${results.length} chủ đề${created ? ` (${created} chủ đề mới)` : ''}: ${names}. Xem ở mục "Của tôi" trên trang Chủ đề.`
 }
 
 function StatusBadge({ status }: { status: RowStatus }): ReactNode {

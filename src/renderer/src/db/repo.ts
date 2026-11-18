@@ -341,7 +341,10 @@ export async function importIntoTopics(
         skipped: r.skipped + (prev?.skipped ?? 0)
       })
     }
-    return [...results.values()]
+    const list = [...results.values()]
+    // Không lưu được từ nào → báo lỗi (rollback chủ đề vừa tạo), tránh báo "thành công" giả
+    if (!list.some((x) => x.added + x.updated > 0)) throw new Error('Không có từ nào được lưu (thiếu từ hoặc nghĩa).')
+    return list
   })
 }
 

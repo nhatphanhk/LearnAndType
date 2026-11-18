@@ -12,14 +12,28 @@ export default function Topics(): ReactNode {
   const now = useNow()
 
   const byTopic = useMemo(() => groupByTopic(words ?? []), [words])
+  // Chủ đề của tôi lên đầu — chủ đề tạo khi nhập & phân loại có thể trùng tên chủ đề có sẵn (VD "Động vật")
+  const ordered = useMemo(
+    () => (topics ? [...topics.filter((t) => !t.isBuiltIn), ...topics.filter((t) => t.isBuiltIn)] : []),
+    [topics]
+  )
 
   if (!topics || !words || !progress) return null
+  const myWords = words.filter((w) => !w.isBuiltIn).length
 
   return (
     <div>
       <PageHeader
         title="Chủ đề"
-        subtitle="Chọn một chủ đề để học từ mới hoặc luyện tập theo nhiều chế độ."
+        subtitle={
+          <>
+            Chọn một chủ đề để học từ mới hoặc luyện tập theo nhiều chế độ.{' '}
+            <span className="font-medium text-slate-700 dark:text-slate-300" data-role="word-total">
+              📚 Tổng {words.length.toLocaleString('vi-VN')} từ vựng trong {topics.length} chủ đề
+              {myWords > 0 && ` · ${myWords.toLocaleString('vi-VN')} từ của tôi`}
+            </span>
+          </>
+        }
         actions={
           <Link to="/manage">
             <Button>✍️ Tạo chủ đề riêng</Button>
@@ -27,7 +41,7 @@ export default function Topics(): ReactNode {
         }
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {topics.map((t) => {
+        {ordered.map((t) => {
           const ws = byTopic.get(t.id) ?? []
           const tp = topicProgress(
             ws.map((w) => w.id),
