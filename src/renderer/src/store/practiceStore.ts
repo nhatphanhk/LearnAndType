@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { buildQueue, requeue, type QueueItem } from '@/core/queue'
 import { calcAccuracy, calcWpm, classifyKeystroke, isMatch, makeCloze, nextHint, wrongKeyPairs } from '@/core/typing'
+import { CHOICE_COUNT, isChoiceCorrect, makeChoices } from '@/core/choice'
+import { buildDrillQueue } from '@/core/drill'
 import { discardSessionIfEmpty, recordAttempt, saveSessionStats, startSession } from '@/db/repo'
 import { useSettings } from './settingsStore'
 import type { PracticeMode, SessionKind, Word } from '@/types'
@@ -59,12 +61,16 @@ interface PracticeData {
 
 export interface StartOptions {
   textOnly?: boolean
+  /** Nguồn phương án nhiễu cho trắc nghiệm (mặc định: các từ trong phiên). */
+  pool?: readonly Word[]
 }
 
 interface PracticeActions {
   start: (kind: SessionKind, topicId: string | null, words: Word[], opts?: StartOptions) => Promise<void>
   input: (value: string) => Promise<void>
   submit: () => Promise<void>
+  /** Chọn một phương án ở lượt trắc nghiệm. */
+  choose: (option: string) => Promise<void>
   hint: () => Promise<void>
   next: () => Promise<void>
   finish: () => Promise<void>
@@ -111,11 +117,25 @@ export function currentWord(s: PracticeData): Word | undefined {
   return item ? s.words[item.wordId] : undefined
 }
 
-/** Đáp án hợp lệ: từ gốc, hoặc (ở chế độ Điền câu) từ kèm hậu tố có trong câu. */
-export function acceptsAnswer(word: Word, mode: PracticeMode, typed: string, caseSensitive = false): boolean {
-  if (isMatch(word.word, typed, caseSensitive)) return true
-  if (mode === 'cloze') {
-    const cloze = makeCloze(word.example, word.word)
+/** Đáp án cần gõ / chọn của lượt: mặc định là chính từ đó (họ từ, đồng nghĩa thì khác). */
+export function targetOf(word: Word, item?: Pick<QueueItem, 'answer'>): string {
+  return item?.answer ?? word.word
+}
+
+/**
+ * Đáp án hợp lệ: đáp án của lượt, hoặc (ở chế độ Điền câu / Collocation) từ kèm hậu tố có trong câu / cụm từ.
+ */
+export function acceptsAnswer(
+  word: Word,
+  mode: PracticeMode,
+  typed: string,
+  caseSensitive = false,
+  item?: Pick<QueueItem, 'answer' | 'prompt'>
+): boolean {
+  const target = targetOf(word, item)
+  if (isMatch(target, typed, caseSensitive)) return true
+  if (mode === 'cloze' || mode === 'collocation') {
+    const cloze = makeCloze(mode === 'cloze' ? word.example : (item?.prompt ?? ''), word.word)
     if (cloze?.suffix && isMatch(word.word + cloze.suffix, typed, caseSensitive)) return true
   }
   return false
@@ -193,7 +213,10 @@ export const usePractice = create<PracticeState>()((set, get) => {
     ...initial,
 
     async start(kind, topicId, words, opts = {}) {
-      const queue = buildQueue(kind, words)
+      const pool = opts.pool && opts.pool.length >= CHOICE_COUNT ? opts.pool : words
+      const queue = (kind === 'drill' ? buildDrillQueue(words, pool) : buildQueue(kind, words)).map((it) =>
+        it.mode === 'choice' ? { ...it, options: makeChoices(words.find((w) => w.id === it.wordId)!, pool) } : it
+      )
       if (queue.length === 0) return
       const now = Date.now()
       const textOnly = opts.textOnly ?? false
@@ -217,9 +240,11 @@ export const usePractice = create<PracticeState>()((set, get) => {
       const item = currentItem(s)
       const word = currentWord(s)
       if (s.status !== 'running' || !item || !word || s.phase === 'done' || s.busy) return
+      // Trắc nghiệm: chọn bằng chuột / phím số, không gõ (trừ khi sai phải gõ lại đáp án)
+      if (item.options && s.phase === 'typing') return
       const value = raw.replace(/[\r\n\t]/g, '')
       const now = Date.now()
-      const target = word.word
+      const target = targetOf(word, item)
       const k = classifyKeystroke(target, s.typed, value, caseSensitive())
       const gap = s.lastKeyAt === null ? 0 : now - s.lastKeyAt
       const keys = k ? k.correct + k.wrong : 0
@@ -254,9 +279,10 @@ export const usePractice = create<PracticeState>()((set, get) => {
         await get().next()
         return
       }
+      if (item.options && s.phase === 'typing') return
       if (item.mode === 'copy' || s.phase === 'retype') {
         // Phải gõ đúng mới qua được
-        if (isMatch(word.word, s.typed, caseSensitive())) {
+        if (isMatch(targetOf(word, item), s.typed, caseSensitive())) {
           if (s.phase === 'retype') set({ phase: 'done' })
           else await completeCopy()
         } else {
@@ -264,7 +290,7 @@ export const usePractice = create<PracticeState>()((set, get) => {
         }
         return
       }
-      const correct = acceptsAnswer(word, item.mode, s.typed, caseSensitive())
+      const correct = acceptsAnswer(word, item.mode, s.typed, caseSensitive(), item)
       set({
         busy: true,
         lastAnswer: s.typed,
@@ -290,14 +316,32 @@ export const usePractice = create<PracticeState>()((set, get) => {
       }
     },
 
+    async choose(option) {
+      const s = get()
+      const item = currentItem(s)
+      const word = currentWord(s)
+      if (s.status !== 'running' || !item || !word || !item.options || s.phase !== 'typing' || s.busy) return
+      const correct = isChoiceCorrect(targetOf(word, item), option)
+      set({ busy: true, lastAnswer: option })
+      try {
+        await record(correct)
+        if (correct) set({ phase: 'done', lastCorrect: true })
+        // Sai → gõ lại đáp án đúng để nhớ, và gặp lại từ này sau vài lượt
+        else set((st) => ({ phase: 'retype', lastCorrect: false, typed: '', queue: requeue(st.queue, st.index) }))
+      } finally {
+        set({ busy: false })
+      }
+    },
+
     async hint() {
       const s = get()
       const item = currentItem(s)
       const word = currentWord(s)
       if (s.status !== 'running' || !item || !word || s.phase === 'done' || s.busy) return
-      const typed = nextHint(word.word, s.typed, caseSensitive())
+      if (item.options && s.phase === 'typing') return
+      const typed = nextHint(targetOf(word, item), s.typed, caseSensitive())
       set({ typed, hinted: s.phase === 'typing' ? true : s.hinted })
-      if (isMatch(word.word, typed, caseSensitive())) {
+      if (isMatch(targetOf(word, item), typed, caseSensitive())) {
         if (s.phase === 'retype') set({ phase: 'done' })
         else if (item.mode === 'copy') await completeCopy()
       }

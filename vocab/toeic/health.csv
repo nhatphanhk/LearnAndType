@@ -1,0 +1,33 @@
+word,meaning,ipa,pos,cefr,example,exampleVi,synonyms,collocations,family
+appointment,cuộc hẹn,/əˈpɔɪntmənt/,n,A2,"I have a dental appointment at four.","Tôi có hẹn nha khoa lúc bốn giờ.",meeting;booking,make an appointment;cancel an appointment,appoint (v)
+clinic,phòng khám,/ˈklɪnɪk/,n,B1,"The clinic is open on Saturdays.","Phòng khám mở cửa vào thứ Bảy.",health center;practice,medical clinic;dental clinic,clinical (adj)
+physician,bác sĩ,/fɪˈzɪʃn/,n,C1,"Consult your physician before taking this medicine.","Hãy hỏi ý kiến bác sĩ trước khi dùng thuốc này.",doctor,family physician,
+pharmacy,hiệu thuốc,/ˈfɑːməsi/,n,B1,"You can pick up your prescription at the pharmacy.","Bạn có thể nhận thuốc theo đơn ở hiệu thuốc.",drugstore;chemist,local pharmacy,pharmacist (n);pharmaceutical (adj)
+pharmacist,dược sĩ,/ˈfɑːməsɪst/,n,B2,"Ask the pharmacist about side effects.","Hãy hỏi dược sĩ về tác dụng phụ.",chemist,,pharmacy (n)
+prescription,đơn thuốc,/prɪˈskrɪpʃn/,n,B2,"The doctor wrote a prescription for antibiotics.","Bác sĩ đã kê đơn kháng sinh.",medicine order,fill a prescription;prescription drugs,prescribe (v)
+prescribe,kê đơn,/prɪˈskraɪb/,v,C1,"The doctor prescribed rest and fluids.","Bác sĩ kê đơn nghỉ ngơi và uống nhiều nước.",order;recommend,prescribe medication,prescription (n)
+medication,thuốc,/ˌmedɪˈkeɪʃn/,n,B2,"Are you taking any medication?","Bạn có đang dùng thuốc nào không?",medicine;drug,take medication;prescribed medication,medicate (v);medical (adj)
+symptom,triệu chứng,/ˈsɪmptəm/,n,B2,"Common symptoms include fever and cough.","Triệu chứng thường gặp gồm sốt và ho.",sign;indication,flu symptoms;show symptoms,symptomatic (adj)
+treatment,sự điều trị,/ˈtriːtmənt/,n,B1,"The treatment lasts six weeks.","Đợt điều trị kéo dài sáu tuần.",therapy;care,receive treatment;medical treatment,treat (v)
+checkup,kiểm tra sức khỏe,/ˈtʃekʌp/,n,B1,"Employees get a free annual checkup.","Nhân viên được kiểm tra sức khỏe miễn phí hàng năm.",examination;physical,annual checkup;medical checkup,
+insurance,bảo hiểm,/ɪnˈʃʊərəns/,n,B1,"Does your insurance cover dental care?","Bảo hiểm của bạn có chi trả chăm sóc răng không?",coverage;protection,health insurance;insurance policy;insurance claim,insure (v);insurer (n)
+coverage,phạm vi bảo hiểm,/ˈkʌvərɪdʒ/,n,C1,"The plan offers full medical coverage.","Gói bảo hiểm chi trả y tế toàn diện.",protection;insurance,insurance coverage;full coverage,cover (v)
+claim,yêu cầu bồi thường,/kleɪm/,n,B2,"You must file a claim within 30 days.","Bạn phải nộp yêu cầu bồi thường trong vòng 30 ngày.",request;application,file a claim;insurance claim,claim (v)
+premium,phí bảo hiểm,/ˈpriːmiəm/,n,C1,"Insurance premiums rose this year.","Phí bảo hiểm đã tăng trong năm nay.",payment;fee,monthly premium;insurance premium,
+policyholder,người mua bảo hiểm,/ˈpɒləsihəʊldə(r)/,n,C1,"Policyholders can renew online.","Người mua bảo hiểm có thể gia hạn trực tuyến.",insured person,,
+patient,bệnh nhân,/ˈpeɪʃnt/,n,B1,"The doctor sees thirty patients a day.","Bác sĩ khám ba mươi bệnh nhân mỗi ngày.",sick person,outpatient;treat a patient,patience (n)
+recover,hồi phục,/rɪˈkʌvə(r)/,v,B1,"She is recovering from surgery.","Cô ấy đang hồi phục sau phẫu thuật.",get better;heal,recover from;fully recover,recovery (n)
+surgery,phẫu thuật,/ˈsɜːdʒəri/,n,B2,"He needs surgery on his knee.","Anh ấy cần phẫu thuật đầu gối.",operation,have surgery;undergo surgery,surgeon (n);surgical (adj)
+allergy,dị ứng,/ˈælədʒi/,n,B2,"Do you have any food allergies?","Bạn có bị dị ứng thức ăn nào không?",sensitivity,food allergy;have an allergy,allergic (adj)
+fitness,thể lực,/ˈfɪtnəs/,n,B1,"The company offers fitness classes for staff.","Công ty mở các lớp thể dục cho nhân viên.",health;condition,fitness center;physical fitness,fit (adj)
+wellness,sức khỏe toàn diện,/ˈwelnəs/,n,C1,"Our wellness program includes yoga and nutrition advice.","Chương trình sức khỏe gồm yoga và tư vấn dinh dưỡng.",health;well-being,wellness program,
+nutrition,dinh dưỡng,/njuˈtrɪʃn/,n,B2,"Good nutrition is essential for health.","Dinh dưỡng tốt rất cần thiết cho sức khỏe.",diet;nourishment,good nutrition;nutrition facts,nutritious (adj);nutritional (adj)
+hygiene,vệ sinh,/ˈhaɪdʒiːn/,n,C1,"Staff must follow strict hygiene rules.","Nhân viên phải tuân thủ quy định vệ sinh nghiêm ngặt.",cleanliness;sanitation,personal hygiene;food hygiene,hygienic (adj)
+emergency,trường hợp khẩn cấp,/iˈmɜːdʒənsi/,n,B1,"In an emergency, call 115.","Trong trường hợp khẩn cấp, hãy gọi 115.",crisis;urgent situation,emergency room;emergency exit,
+ambulance,xe cứu thương,/ˈæmbjələns/,n,B1,"An ambulance arrived within minutes.","Xe cứu thương đến trong vài phút.",emergency vehicle,call an ambulance,
+injury,chấn thương,/ˈɪndʒəri/,n,B1,"Report any injury to your supervisor.","Báo cáo mọi chấn thương cho người giám sát.",wound;harm,serious injury;work injury,injure (v);injured (adj)
+sick leave,nghỉ ốm,/ˈsɪk liːv/,n,B2,"He is on sick leave this week.","Tuần này anh ấy nghỉ ốm.",medical leave,take sick leave,
+diagnosis,chẩn đoán,/ˌdaɪəɡˈnəʊsɪs/,n,C1,"The diagnosis was confirmed by tests.","Chẩn đoán đã được xác nhận bằng xét nghiệm.",identification;analysis,make a diagnosis,diagnose (v);diagnostic (adj)
+dosage,liều lượng,/ˈdəʊsɪdʒ/,n,C1,"Do not exceed the recommended dosage.","Không dùng quá liều lượng khuyến cáo.",dose;amount,recommended dosage,dose (n)
+side effect,tác dụng phụ,/ˈsaɪd ɪfekt/,n,B2,"Drowsiness is a common side effect.","Buồn ngủ là tác dụng phụ thường gặp.",reaction,cause side effects,
+medical,thuộc y tế,/ˈmedɪkl/,adj,B1,"Please bring your medical records.","Vui lòng mang theo hồ sơ y tế.",clinical;health,medical records;medical history,medically (adv);medicine (n)

@@ -20,6 +20,7 @@ import SettingsPage from './pages/Settings'
 import QuickLookup from './pages/QuickLookup'
 import Games from './pages/Games'
 import Achievements from './pages/Achievements'
+import Packs from './pages/Packs'
 import { useAchievementWatcher } from './hooks/useGamification'
 
 function useThemeClass(): void {
@@ -40,6 +41,7 @@ function useThemeClass(): void {
 const NAV = [
   { to: '/', label: 'Tổng quan', icon: '🏠' },
   { to: '/topics', label: 'Chủ đề', icon: '📚' },
+  { to: '/packs', label: 'Luyện thi', icon: '🎯' },
   { to: '/typing', label: 'Gõ chữ', icon: '🔤' },
   { to: '/review', label: 'Ôn tập', icon: '🔁' },
   { to: '/games', label: 'Trò chơi', icon: '🎮' },
@@ -119,6 +121,7 @@ function Shell(): ReactNode {
             <Route path="/" element={<Dashboard />} />
             <Route path="/topics" element={<Topics />} />
             <Route path="/topics/:id" element={<TopicDetail />} />
+            <Route path="/packs" element={<Packs />} />
             <Route path="/typing" element={<TextTyping />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/review" element={<Review />} />

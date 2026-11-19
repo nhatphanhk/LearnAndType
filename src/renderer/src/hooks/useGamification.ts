@@ -45,13 +45,25 @@ export function useGamification(): Gamification | undefined {
     const summary = summarize(progress, sessions, words.length, now)
     const progressMap = new Map(progress.map((p) => [p.wordId, p]))
     let completedTopics = 0
+    let completedExamTopics = 0
     for (const ws of groupByTopic(words).values()) {
       const tp = topicProgress(
         ws.map((w) => w.id),
         progressMap,
         now
       )
-      if (tp.total > 0 && tp.mastered === tp.total) completedTopics++
+      if (tp.total > 0 && tp.mastered === tp.total) {
+        completedTopics++
+        if (ws[0].packId) completedExamTopics++
+      }
+    }
+    const examLearned = words.filter((w) => w.packId && (progressMap.get(w.id)?.box ?? 0) > 0).length
+    let choiceCorrect = 0
+    let drillCorrect = 0
+    for (const a of attempts) {
+      if (!a.correct) continue
+      if (a.mode === 'choice') choiceCorrect++
+      else if (a.mode === 'family' || a.mode === 'synonym' || a.mode === 'collocation') drillCorrect++
     }
     const ctx: AchievementContext = {
       learned: summary.learned,
@@ -66,7 +78,11 @@ export function useGamification(): Gamification | undefined {
       completedTopics,
       myWords: words.filter((w) => !w.isBuiltIn).length,
       level: level.level,
-      bestGameScore: Math.max(0, ...Object.values(highscores).map((v) => v ?? 0))
+      bestGameScore: Math.max(0, ...Object.values(highscores).map((v) => v ?? 0)),
+      examLearned,
+      completedExamTopics,
+      choiceCorrect,
+      drillCorrect
     }
     return { xp, level, ctx, unlocked, highscores }
   }, [data, unlocked, highscores, now, dailyGoalWords, dailyGoalMinutes])

@@ -12,11 +12,16 @@ export default function Topics(): ReactNode {
   const now = useNow()
 
   const byTopic = useMemo(() => groupByTopic(words ?? []), [words])
-  // Chủ đề của tôi lên đầu — chủ đề tạo khi nhập & phân loại có thể trùng tên chủ đề có sẵn (VD "Động vật")
+  // Chủ đề của tôi lên đầu — chủ đề tạo khi nhập & phân loại có thể trùng tên chủ đề có sẵn (VD "Động vật").
+  // Chủ đề của gói luyện thi (rất nhiều) nằm ở trang "Luyện thi".
   const ordered = useMemo(
-    () => (topics ? [...topics.filter((t) => !t.isBuiltIn), ...topics.filter((t) => t.isBuiltIn)] : []),
+    () =>
+      topics
+        ? [...topics.filter((t) => !t.isBuiltIn), ...topics.filter((t) => t.isBuiltIn && !t.packId)]
+        : [],
     [topics]
   )
+  const packTopicCount = topics?.filter((t) => t.packId).length ?? 0
 
   if (!topics || !words || !progress) return null
   const myWords = words.filter((w) => !w.isBuiltIn).length
@@ -35,9 +40,14 @@ export default function Topics(): ReactNode {
           </>
         }
         actions={
-          <Link to="/manage">
-            <Button>✍️ Tạo chủ đề riêng</Button>
-          </Link>
+          <>
+            <Link to="/packs">
+              <Button>🎯 Luyện thi TOEIC / IELTS{packTopicCount > 0 && ` (${packTopicCount} chủ đề)`}</Button>
+            </Link>
+            <Link to="/manage">
+              <Button>✍️ Tạo chủ đề riêng</Button>
+            </Link>
+          </>
         }
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

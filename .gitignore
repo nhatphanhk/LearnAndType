@@ -6,3 +6,8 @@ dist/
 .vite/
 coverage/
 *.tsbuildinfo
+
+# Gói luyện thi: dữ liệu nguồn có bản quyền (chỉ dùng cá nhân) — không commit
+data-sources/
+src/renderer/src/data/packs/*.json
+src/renderer/src/data/cefr-levels.json

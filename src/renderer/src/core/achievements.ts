@@ -18,6 +18,15 @@ export interface AchievementContext {
   level: number
   /** Điểm cao nhất các mini-game. */
   bestGameScore: number
+  /* ---- Luyện thi (tùy chọn) ---- */
+  /** Số từ đã học trong các gói luyện thi. */
+  examLearned?: number
+  /** Số chủ đề luyện thi đã thuộc hết. */
+  completedExamTopics?: number
+  /** Số câu trắc nghiệm trả lời đúng. */
+  choiceCorrect?: number
+  /** Số lượt luyện chuyên sâu (họ từ / đồng nghĩa / collocation) đúng. */
+  drillCorrect?: number
 }
 
 export interface Achievement {
@@ -43,7 +52,12 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: 'hours-10', name: '10 giờ gõ phím', emoji: '⏱️', desc: 'Tổng thời gian gõ đạt 10 giờ.', check: (c) => c.totalMinutes >= 600 },
   { id: 'my-words-50', name: 'Nhà sưu tầm', emoji: '✍️', desc: 'Tự thêm 50 từ.', check: (c) => c.myWords >= 50 },
   { id: 'level-10', name: 'Cấp 10', emoji: '🚀', desc: 'Đạt cấp độ 10.', check: (c) => c.level >= 10 },
-  { id: 'game-300', name: 'Game thủ', emoji: '🎮', desc: 'Đạt 300 điểm trong một mini-game.', check: (c) => c.bestGameScore >= 300 }
+  { id: 'game-300', name: 'Game thủ', emoji: '🎮', desc: 'Đạt 300 điểm trong một mini-game.', check: (c) => c.bestGameScore >= 300 },
+  { id: 'exam-100', name: 'Sĩ tử chăm chỉ', emoji: '📝', desc: 'Học 100 từ luyện thi TOEIC / IELTS.', check: (c) => (c.examLearned ?? 0) >= 100 },
+  { id: 'exam-500', name: 'Sẵn sàng vào phòng thi', emoji: '🎓', desc: 'Học 500 từ luyện thi.', check: (c) => (c.examLearned ?? 0) >= 500 },
+  { id: 'exam-topic', name: 'Chinh phục chủ đề thi', emoji: '🗂️', desc: 'Thuộc hết một chủ đề luyện thi.', check: (c) => (c.completedExamTopics ?? 0) >= 1 },
+  { id: 'choice-100', name: 'Part 5 không ngán', emoji: '✅', desc: 'Trả lời đúng 100 câu trắc nghiệm.', check: (c) => (c.choiceCorrect ?? 0) >= 100 },
+  { id: 'drill-50', name: 'Bậc thầy biến hóa', emoji: '🧬', desc: 'Đúng 50 lượt luyện họ từ / đồng nghĩa / collocation.', check: (c) => (c.drillCorrect ?? 0) >= 50 }
 ]
 
 /** Huy hiệu đã mở: id → thời điểm mở. */

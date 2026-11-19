@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { db } from '@/db/schema'
 import { pickLessonWords } from '@/core/queue'
 import { calcAccuracy, calcWpm, makeCloze } from '@/core/typing'
-import { currentItem, currentWord, sessionStats, usePractice } from '@/store/practiceStore'
+import { currentItem, currentWord, sessionStats, targetOf, usePractice } from '@/store/practiceStore'
 import { useSettings } from '@/store/settingsStore'
 import { speak, stopSpeaking } from '@/hooks/useSpeech'
 import { sfx } from '@/hooks/sfx'
@@ -127,8 +127,19 @@ function Runner(): ReactNode {
   const listenPrompt = item.mode === 'listen' && !reveal
   // Phiên "Gõ chữ", hoặc từ không có ảnh/emoji → chỉ hiển thị chữ
   const showImage = !listenPrompt && !s.textOnly && hasWordVisual(word)
-  const showMeaning = !listenPrompt
-  const cloze = item.mode === 'cloze' ? makeCloze(word.example, word.word) : null
+  const target = targetOf(word, item)
+  const cloze =
+    item.mode === 'cloze' || item.mode === 'choice'
+      ? makeCloze(word.example, word.word)
+      : item.mode === 'collocation'
+        ? makeCloze(item.prompt ?? '', word.word)
+        : null
+  // Lượt có phương án để chọn (trắc nghiệm, đồng nghĩa)
+  const choicePrompt = !!item.options && s.phase === 'typing'
+  // Họ từ / đồng nghĩa: từ đang học là đề bài, đáp án là từ khác → luôn hiện từ
+  const showWord = reveal || item.mode === 'family' || item.mode === 'synonym'
+  // Trắc nghiệm có câu: như đề Part 5, không cho xem nghĩa trước khi chọn
+  const showMeaning = !listenPrompt && !(choicePrompt && cloze)
   const total = s.queue.length
   const wpm = calcWpm(s.correctKeystrokes, s.activeMs)
   const acc = calcAccuracy(s.correctKeystrokes, s.keystrokes)
@@ -138,6 +149,13 @@ function Runner(): ReactNode {
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (composing) return
     const st = usePractice.getState()
+    const options = currentItem(st)?.options
+    if (options && st.phase === 'typing' && /^[1-9]$/.test(e.key)) {
+      e.preventDefault()
+      const opt = options[Number(e.key) - 1]
+      if (opt) void st.choose(opt)
+      return
+    }
     if (e.key === 'Enter') {
       e.preventDefault()
       void st.submit()
@@ -168,6 +186,31 @@ function Runner(): ReactNode {
     instruction = (
       <>
         Gõ từ tiếng Anh rồi nhấn <Kbd>Enter</Kbd> · Không nhớ? Nhấn <Kbd>Tab</Kbd> để gợi ý
+      </>
+    )
+  } else if (item.mode === 'choice') {
+    instruction = (
+      <>
+        {cloze ? 'Chọn từ phù hợp điền vào chỗ trống' : 'Chọn từ tiếng Anh đúng nghĩa'} · Bấm hoặc nhấn phím <Kbd>1</Kbd>–
+        <Kbd>{item.options?.length ?? 4}</Kbd>
+      </>
+    )
+  } else if (item.mode === 'synonym') {
+    instruction = (
+      <>
+        Chọn từ gần nghĩa nhất (paraphrase) · Bấm hoặc nhấn phím <Kbd>1</Kbd>–<Kbd>{item.options?.length ?? 4}</Kbd>
+      </>
+    )
+  } else if (item.mode === 'family') {
+    instruction = (
+      <>
+        Gõ dạng từ được yêu cầu rồi nhấn <Kbd>Enter</Kbd> · Nhấn <Kbd>Tab</Kbd> để gợi ý
+      </>
+    )
+  } else if (item.mode === 'collocation') {
+    instruction = (
+      <>
+        Điền từ còn thiếu trong cụm từ rồi nhấn <Kbd>Enter</Kbd>
       </>
     )
   } else if (item.mode === 'listen') {
@@ -247,7 +290,7 @@ function Runner(): ReactNode {
             {listenPrompt && <SpeakButton text={word.word} big />}
             {showImage && <WordImage word={word} size="lg" />}
 
-            {reveal && (
+            {showWord && (
               <div className={cx('flex items-center gap-2', showImage && 'mt-4')}>
                 <span data-role="word" className={cx('font-bold tracking-tight', showImage ? 'text-4xl' : 'text-5xl')}>
                   {word.word}
@@ -255,7 +298,7 @@ function Runner(): ReactNode {
                 <SpeakButton text={word.word} />
               </div>
             )}
-            {reveal && (word.ipa || word.partOfSpeech) && (
+            {showWord && (word.ipa || word.partOfSpeech) && (
               <div className="mt-1 text-slate-500 dark:text-slate-400">
                 {word.ipa} {word.partOfSpeech && <i className="ml-1">({posLabel(word.partOfSpeech)})</i>}
               </div>
@@ -275,6 +318,18 @@ function Runner(): ReactNode {
               <div className="mt-1 text-sm text-slate-500">({posLabel(word.partOfSpeech)})</div>
             )}
 
+            {item.mode === 'family' && s.phase === 'typing' && (
+              <div className="mt-5 rounded-xl bg-slate-50 px-5 py-4 text-xl dark:bg-slate-800/60" data-role="drill-prompt">
+                👪 Gõ dạng <b className="text-indigo-600 dark:text-indigo-400">{posLabel(item.prompt ?? '')}</b> trong họ từ của{' '}
+                <b>{word.word}</b>
+              </div>
+            )}
+            {item.mode === 'synonym' && s.phase === 'typing' && (
+              <div className="mt-5 text-lg text-slate-600 dark:text-slate-300" data-role="drill-prompt">
+                ≈ Từ nào <b>đồng nghĩa</b> với <b>{word.word}</b>?
+              </div>
+            )}
+
             {cloze && s.phase === 'typing' && (
               <div className="mt-5 rounded-xl bg-slate-50 px-5 py-4 text-xl dark:bg-slate-800/60">
                 {cloze.before}
@@ -283,7 +338,10 @@ function Runner(): ReactNode {
                 </span>
                 {cloze.suffix}
                 {cloze.after}
-                {word.exampleVi && <div className="mt-1 text-sm text-slate-500">{word.exampleVi}</div>}
+                {/* Trắc nghiệm: ẩn bản dịch (lộ nghĩa) cho tới khi chọn */}
+                {word.exampleVi && !choicePrompt && item.mode !== 'collocation' && (
+                  <div className="mt-1 text-sm text-slate-500">{word.exampleVi}</div>
+                )}
               </div>
             )}
           </div>
@@ -292,12 +350,12 @@ function Runner(): ReactNode {
             <div className="mt-5 rounded-xl bg-rose-50 px-4 py-3 text-center text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
               {s.lastAnswer ? (
                 <>
-                  Bạn gõ <s className="font-mono">{s.lastAnswer}</s> — đáp án đúng là{' '}
-                  <b className="font-mono">{word.word}</b>
+                  Bạn {item.options ? 'chọn' : 'gõ'} <s className="font-mono">{s.lastAnswer}</s> — đáp án đúng là{' '}
+                  <b className="font-mono">{target}</b>
                 </>
               ) : (
                 <>
-                  Đáp án là <b className="font-mono">{word.word}</b>
+                  Đáp án là <b className="font-mono">{target}</b>
                 </>
               )}
             </div>
@@ -315,16 +373,36 @@ function Runner(): ReactNode {
             </div>
           )}
 
-          <div key={s.shake} className={cx('mt-8', s.shake > 0 && 'animate-shake')}>
-            <TypingSlots
-              target={word.word}
-              typed={s.typed}
-              variant={slotVariant}
-              hideLength={settings.hideLength}
-              result={slotResult}
-              caseSensitive={settings.caseSensitive}
-            />
-          </div>
+          {choicePrompt && item.options ? (
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2" data-role="choices">
+              {item.options.map((opt, i) => (
+                <button
+                  key={opt}
+                  type="button"
+                  disabled={s.busy}
+                  onClick={() => void usePractice.getState().choose(opt)}
+                  className="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-4 py-3 text-left text-lg ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:ring-indigo-400 dark:bg-slate-900 dark:ring-slate-700 dark:hover:ring-indigo-600"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  <span className="font-medium">{opt}</span>
+                  <span className="ml-auto text-xs text-slate-400">{i + 1}</span>
+                </button>
+              ))}
+            </div>
+          ) : item.options && s.phase === 'done' && s.lastCorrect ? null : (
+            <div key={s.shake} className={cx('mt-8', s.shake > 0 && 'animate-shake')}>
+              <TypingSlots
+                target={target}
+                typed={s.typed}
+                variant={slotVariant}
+                hideLength={settings.hideLength}
+                result={slotResult}
+                caseSensitive={settings.caseSensitive}
+              />
+            </div>
+          )}
 
           {viWarning && (
             <div className="mt-4 rounded-lg bg-amber-50 px-4 py-2 text-center text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">

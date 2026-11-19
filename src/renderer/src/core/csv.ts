@@ -193,3 +193,34 @@ export function wordsToCsv(words: readonly Word[]): string {
   // BOM để Excel mở đúng tiếng Việt
   return '﻿' + Papa.unparse({ fields: [...CSV_COLUMNS], data })
 }
+
+export interface ClassificationEntry {
+  topic: string
+  /** Cấp độ CEFR ghi trong file (A1…C2, nếu có). */
+  cefr?: string
+}
+
+/**
+ * Đọc file kết quả phân loại (cột `word`, `topic`, tùy chọn `cefr`) → từ (chữ thường) → chủ đề.
+ * Chấp nhận BOM, tên cột tiếng Việt (từ / chủ đề / cấp độ) và bỏ dòng thiếu từ hoặc chủ đề.
+ */
+export function parseClassificationCsv(text: string): Map<string, ClassificationEntry> {
+  const { data } = Papa.parse<string[]>(text.replace(/^﻿/, ''), { skipEmptyLines: true })
+  const out = new Map<string, ClassificationEntry>()
+  if (data.length < 2) return out
+  const norm = (h: string): string => h.trim().toLowerCase().replace(/[\s_\-]/g, '')
+  const header = data[0].map(norm)
+  const col = (...names: string[]): number => header.findIndex((h) => names.includes(h))
+  const wi = col('word', 'từ', 'tu', 'english', 'tiếnganh')
+  const ti = col('topic', 'chủđề', 'chude', 'category')
+  const ci = col('cefr', 'level', 'cấpđộ', 'capdo')
+  if (wi < 0 || ti < 0) return out
+  for (const r of data.slice(1)) {
+    const word = (r[wi] ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
+    const topic = (r[ti] ?? '').trim()
+    if (!word || !topic) continue
+    const cefr = ci >= 0 ? (r[ci] ?? '').trim().toUpperCase() : ''
+    out.set(word, { topic, ...(/^(A1|A2|B1|B2|C1|C2)$/.test(cefr) ? { cefr } : {}) })
+  }
+  return out
+}

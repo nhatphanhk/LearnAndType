@@ -11,6 +11,10 @@ import {
   importBackup,
   importIntoTopics,
   importWords,
+  installedPacks,
+  installPack,
+  saveWordLabels,
+  uninstallPack,
   moveWords,
   recordAttempt,
   resetProgress,
@@ -19,6 +23,7 @@ import {
 } from './repo'
 import { DAY_MS } from '@/core/srs'
 import { newTarget } from '@/core/classify'
+import { samplePack } from '@/core/packs.fixture'
 
 const NOW = new Date(2026, 10, 16, 10, 0, 0).getTime()
 
@@ -330,5 +335,87 @@ describe('moveWords (phân loại lại)', () => {
     ).rejects.toThrow()
     expect(await db.words.where('topicId').equals(other).count()).toBe(3)
     expect((await db.topics.toArray()).some((t) => t.name === 'Tạm')).toBe(false)
+  })
+})
+
+describe('gói luyện thi', () => {
+  it('cài hai lần không nhân đôi, không đụng dữ liệu có sẵn', async () => {
+    await ensureSeed(NOW)
+    const r = await installPack(samplePack(), NOW)
+    expect(r).toMatchObject({ topics: 2, words: 3, removed: 0, skipped: 1 })
+    await installPack(samplePack(), NOW)
+    expect(await db.words.where('packId').equals('toeic').count()).toBe(3)
+    expect(await db.topics.count()).toBe(14)
+    expect(await db.words.count()).toBe(243)
+    expect(await installedPacks()).toMatchObject({ toeic: { version: 1, name: 'TOEIC' } })
+    // ensureSeed (VD khi tăng BUILTIN_VERSION) không xóa từ của gói
+    await db.meta.delete('seedVersion')
+    await ensureSeed(NOW)
+    expect(await db.words.count()).toBe(243)
+    // Tìm theo nhãn / CEFR (index v2)
+    expect(await db.words.where('tags').equals('barrons').count()).toBe(1)
+    expect(await db.words.where('cefr').equals('B2').count()).toBe(2)
+  })
+
+  it('cập nhật gói giữ tiến độ, đổi chủ đề theo từ, xóa từ bị bỏ', async () => {
+    await installPack(samplePack(), NOW)
+    const agenda = (await db.words.get('pack-toeic:agenda'))!
+    const deadline = (await db.words.get('pack-toeic:deadline'))!
+    const sessionId = await startSession('lesson', agenda.topicId, NOW)
+    for (const word of [agenda, deadline]) {
+      await recordAttempt({ sessionId, word, mode: 'recall', correct: true, hinted: false, errors: 0, durationMs: 1000 }, NOW)
+    }
+    const v2 = samplePack({ version: 2 })
+    v2.topics[0].words = v2.topics[0].words.filter((w) => w.word !== 'agenda' && w.word !== 'deadline')
+    v2.topics[1].words.push({ word: 'agenda', meaningVi: 'chương trình họp' })
+    const r = await installPack(v2, NOW + 1)
+    expect(r.removed).toBe(1)
+    expect(await db.words.get('pack-toeic:deadline')).toBeUndefined()
+    expect(await db.progress.get('pack-toeic:deadline')).toBeUndefined()
+    expect((await db.words.get('pack-toeic:agenda'))?.topicId).toBe('pack-toeic-finance')
+    expect(await db.progress.get('pack-toeic:agenda')).toMatchObject({ topicId: 'pack-toeic-finance' })
+    // Chủ đề "office" không còn từ nào nhưng vẫn có trong gói → giữ
+    expect(await db.topics.get('pack-toeic-office')).toBeDefined()
+    expect((await installedPacks()).toeic.version).toBe(2)
+  })
+
+  it('gỡ gói xóa chủ đề, từ, tiến độ; sao lưu không chứa từ của gói', async () => {
+    await installPack(samplePack(), NOW)
+    const word = (await db.words.get('pack-toeic:invoice'))!
+    const sessionId = await startSession('lesson', word.topicId, NOW)
+    await recordAttempt({ sessionId, word, mode: 'recall', correct: true, hinted: false, errors: 0, durationMs: 1000 }, NOW)
+    const backup = await exportBackup(NOW)
+    expect(backup.words.some((w) => w.packId)).toBe(false)
+    await uninstallPack('toeic')
+    expect(await db.words.where('packId').equals('toeic').count()).toBe(0)
+    expect(await db.topics.where('packId').equals('toeic').count()).toBe(0)
+    expect(await db.progress.count()).toBe(0)
+    expect(await installedPacks()).toEqual({})
+  })
+
+  it('từ chối gói không hợp lệ hoặc rỗng', async () => {
+    await expect(installPack({ ...samplePack(), app: 'x' } as never)).rejects.toThrow('không hợp lệ')
+    const empty = samplePack()
+    empty.topics.forEach((t) => (t.words = []))
+    await expect(installPack(empty)).rejects.toThrow('không có từ nào')
+  })
+})
+
+describe('saveWordLabels', () => {
+  it('gắn CEFR + nhãn cho từ có sẵn, giữ qua ensureSeed, bỏ qua từ của gói', async () => {
+    await ensureSeed(NOW)
+    await installPack(samplePack(), NOW)
+    const n = await saveWordLabels([
+      { id: 'animals:cat', cefr: 'A1', tags: ['general'] },
+      { id: 'animals:cat', tags: ['general'] },
+      { id: 'pack-toeic:agenda', cefr: 'A1' },
+      { id: 'missing', cefr: 'B1' }
+    ])
+    expect(n).toBe(1)
+    expect(await db.words.get('animals:cat')).toMatchObject({ cefr: 'A1', tags: ['general'] })
+    expect((await db.words.get('pack-toeic:agenda'))?.cefr).toBe('B2')
+    await db.meta.delete('seedVersion')
+    await ensureSeed(NOW)
+    expect(await db.words.get('animals:cat')).toMatchObject({ cefr: 'A1', tags: ['general'] })
   })
 })

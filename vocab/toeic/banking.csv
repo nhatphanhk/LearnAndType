@@ -1,0 +1,36 @@
+word,meaning,ipa,pos,cefr,example,exampleVi,synonyms,collocations,family
+account,tài khoản,/əˈkaʊnt/,n,A2,"I'd like to open a savings account.","Tôi muốn mở một tài khoản tiết kiệm.",record;deposit account,open an account;bank account;checking account,accountant (n);accounting (n)
+deposit,gửi tiền / tiền đặt cọc,/dɪˈpɒzɪt/,v,B2,"She deposited the check this morning.","Cô ấy đã gửi tấm séc vào ngân hàng sáng nay.",put in;bank,make a deposit;security deposit,deposit (n);depositor (n)
+withdraw,rút tiền,/wɪðˈdrɔː/,v,B2,"You can withdraw cash at any ATM.","Bạn có thể rút tiền mặt ở bất kỳ ATM nào.",take out,withdraw money;withdraw from an account,withdrawal (n)
+balance,số dư,/ˈbæləns/,n,B1,"Please check your account balance online.","Vui lòng kiểm tra số dư tài khoản trực tuyến.",remainder;amount,account balance;outstanding balance,balance (v)
+transfer,chuyển khoản,/trænsˈfɜː(r)/,v,B1,"The money was transferred to your account yesterday.","Tiền đã được chuyển vào tài khoản của bạn hôm qua.",send;move,bank transfer;wire transfer;transfer funds,transfer (n);transferable (adj)
+loan,khoản vay,/ləʊn/,n,B1,"The bank approved our loan application.","Ngân hàng đã duyệt đơn vay của chúng tôi.",credit;advance,take out a loan;repay a loan;loan application,loan (v)
+interest,tiền lãi,/ˈɪntrəst/,n,B2,"The account pays 3 percent interest.","Tài khoản trả lãi 3%.",return;earnings,interest rate;earn interest,
+mortgage,khoản vay thế chấp,/ˈmɔːɡɪdʒ/,n,C1,"They took out a mortgage to buy the house.","Họ vay thế chấp để mua nhà.",home loan,mortgage payment;pay off a mortgage,mortgage (v)
+credit,tín dụng,/ˈkredɪt/,n,B1,"Can I pay by credit card?","Tôi có thể trả bằng thẻ tín dụng không?",loan;finance,credit card;credit limit;on credit,creditor (n);credit (v)
+check,séc,/tʃek/,n,B1,"Please make the check payable to ABC Corp.","Vui lòng ghi séc cho Công ty ABC.",cheque;draft,cash a check;write a check,
+currency,tiền tệ,/ˈkʌrənsi/,n,B2,"You can exchange currency at the airport.","Bạn có thể đổi ngoại tệ ở sân bay.",money;cash,foreign currency;exchange currency,
+exchange rate,tỷ giá,/ɪksˈtʃeɪndʒ reɪt/,n,B2,"The exchange rate changes every day.","Tỷ giá thay đổi mỗi ngày.",rate,current exchange rate,
+installment,khoản trả góp,/ɪnˈstɔːlmənt/,n,C1,"You can pay in twelve monthly installments.","Bạn có thể trả góp trong mười hai tháng.",payment;part payment,pay in installments;monthly installment,
+overdue,quá hạn,/ˌəʊvəˈdjuː/,adj,C1,"Your payment is two weeks overdue.","Khoản thanh toán của bạn đã quá hạn hai tuần.",late;outstanding,overdue payment;overdue bill,
+outstanding,chưa thanh toán / xuất sắc,/aʊtˈstændɪŋ/,adj,B2,"There is an outstanding balance of $200.","Còn số dư chưa thanh toán 200 đô la.",unpaid;due,outstanding balance;outstanding debt,
+invest,đầu tư,/ɪnˈvest/,v,B2,"The company invested heavily in new equipment.","Công ty đã đầu tư mạnh vào thiết bị mới.",fund;put money into,invest in;invest heavily,investment (n);investor (n)
+investment,khoản đầu tư,/ɪnˈvestmənt/,n,B2,"Property is a safe long-term investment.","Bất động sản là khoản đầu tư dài hạn an toàn.",stake;funding,make an investment;return on investment,invest (v);investor (n)
+investor,nhà đầu tư,/ɪnˈvestə(r)/,n,B2,"The startup is looking for investors.","Công ty khởi nghiệp đang tìm nhà đầu tư.",shareholder;backer,foreign investor;attract investors,invest (v);investment (n)
+stock,cổ phiếu / hàng tồn kho,/stɒk/,n,B2,"Stock prices fell sharply on Monday.","Giá cổ phiếu giảm mạnh vào thứ Hai.",shares;inventory,stock market;in stock;out of stock,stockholder (n)
+portfolio,danh mục đầu tư / hồ sơ năng lực,/pɔːtˈfəʊliəʊ/,n,C1,"She manages a large investment portfolio.","Cô ấy quản lý một danh mục đầu tư lớn.",collection;holdings,investment portfolio;diversify a portfolio,
+return,lợi nhuận thu về,/rɪˈtɜːn/,n,B2,"The fund offers a high return.","Quỹ mang lại lợi nhuận cao.",yield;profit,return on investment;high return,return (v)
+risk,rủi ro,/rɪsk/,n,B1,"All investments carry some risk.","Mọi khoản đầu tư đều có rủi ro.",danger;hazard,take a risk;high risk;reduce risk,risky (adj);risk (v)
+merger,sự sáp nhập,/ˈmɜːdʒə(r)/,n,C1,"The merger created the country's largest bank.","Vụ sáp nhập tạo ra ngân hàng lớn nhất cả nước.",amalgamation;union,merger and acquisition;announce a merger,merge (v)
+acquisition,sự thâu tóm / mua lại,/ˌækwɪˈzɪʃn/,n,C1,"The acquisition of the rival firm cost $5 billion.","Việc mua lại công ty đối thủ tốn 5 tỷ đô la.",purchase;takeover,company acquisition,acquire (v)
+bankrupt,phá sản,/ˈbæŋkrʌpt/,adj,C1,"The retailer went bankrupt last year.","Nhà bán lẻ đã phá sản năm ngoái.",insolvent;broke,go bankrupt,bankruptcy (n)
+teller,giao dịch viên ngân hàng,/ˈtelə(r)/,n,C1,"Ask the teller to cash your check.","Hãy nhờ giao dịch viên đổi séc ra tiền mặt.",cashier;clerk,bank teller,
+ATM,máy rút tiền,/ˌeɪ tiː ˈem/,n,B1,"There is an ATM in the lobby.","Có một máy rút tiền ở sảnh.",cash machine,use an ATM;ATM card,
+PIN,mã PIN,/pɪn/,n,B2,"Never share your PIN with anyone.","Đừng bao giờ chia sẻ mã PIN với ai.",passcode,enter your PIN,
+fee,phí,/fiː/,n,B1,"There is no fee for online transfers.","Không mất phí cho chuyển khoản trực tuyến.",charge;cost,service fee;annual fee;late fee,
+charge,tính phí,/tʃɑːdʒ/,v,B1,"The bank charges $2 per transaction.","Ngân hàng tính phí 2 đô la mỗi giao dịch.",bill;levy,free of charge;extra charge,charge (n)
+transaction,giao dịch,/trænˈzækʃn/,n,B2,"Each transaction is recorded on your statement.","Mỗi giao dịch được ghi trên bản sao kê của bạn.",deal;operation,online transaction;complete a transaction,transact (v)
+savings,tiền tiết kiệm,/ˈseɪvɪŋz/,n,B1,"He used his savings to start a business.","Anh ấy dùng tiền tiết kiệm để khởi nghiệp.",reserves;funds,savings account;life savings,save (v)
+finance,tài chính / cấp vốn,/ˈfaɪnæns/,n,B1,"The project was financed by private investors.","Dự án được các nhà đầu tư tư nhân cấp vốn.",funding;money matters,finance department;personal finance,financial (adj);financially (adv);finance (v)
+financial,thuộc về tài chính,/faɪˈnænʃl/,adj,B1,"The company is in financial difficulty.","Công ty đang gặp khó khăn tài chính.",economic;monetary,financial advisor;financial report,finance (n);financially (adv)
+lender,bên cho vay,/ˈlendə(r)/,n,C1,"Compare rates from several lenders.","Hãy so sánh lãi suất của nhiều bên cho vay.",creditor;bank,mortgage lender,lend (v);loan (n)

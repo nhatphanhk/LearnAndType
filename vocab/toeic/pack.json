@@ -1,0 +1,28 @@
+{
+  "id": "toeic",
+  "version": 1,
+  "name": "TOEIC cốt lõi",
+  "nameEn": "TOEIC Core",
+  "emoji": "💼",
+  "description": "Từ vựng công sở – kinh doanh thường gặp trong đề TOEIC Listening & Reading, chia theo bối cảnh đề thi.",
+  "exam": "toeic",
+  "sources": ["LearnAndType (tự soạn)"],
+  "topics": [
+    { "id": "office", "name": "Văn phòng", "nameEn": "Office", "emoji": "🏢" },
+    { "id": "personnel", "name": "Nhân sự & tuyển dụng", "nameEn": "Personnel & Hiring", "emoji": "🧑‍💼" },
+    { "id": "meetings", "name": "Họp & giao tiếp", "nameEn": "Meetings & Communication", "emoji": "🗣️" },
+    { "id": "finance", "name": "Tài chính & kế toán", "nameEn": "Finance & Accounting", "emoji": "💰" },
+    { "id": "banking", "name": "Ngân hàng & đầu tư", "nameEn": "Banking & Investment", "emoji": "🏦" },
+    { "id": "marketing", "name": "Marketing & bán hàng", "nameEn": "Marketing & Sales", "emoji": "📣" },
+    { "id": "contracts", "name": "Hợp đồng & pháp lý", "nameEn": "Contracts & Legal", "emoji": "📝" },
+    { "id": "purchasing", "name": "Mua hàng & đơn hàng", "nameEn": "Purchasing & Orders", "emoji": "🛒" },
+    { "id": "shipping", "name": "Vận chuyển & kho bãi", "nameEn": "Shipping & Warehousing", "emoji": "🚚" },
+    { "id": "manufacturing", "name": "Sản xuất & chất lượng", "nameEn": "Manufacturing & Quality", "emoji": "🏭" },
+    { "id": "travel", "name": "Du lịch & công tác", "nameEn": "Travel & Business Trips", "emoji": "✈️" },
+    { "id": "dining", "name": "Nhà hàng & sự kiện", "nameEn": "Dining & Events", "emoji": "🍽️" },
+    { "id": "health", "name": "Sức khỏe & bảo hiểm", "nameEn": "Health & Insurance", "emoji": "🩺" },
+    { "id": "housing", "name": "Bất động sản & cơ sở vật chất", "nameEn": "Property & Facilities", "emoji": "🏠" },
+    { "id": "technology", "name": "Công nghệ", "nameEn": "Technology", "emoji": "💻" },
+    { "id": "customer-service", "name": "Dịch vụ khách hàng", "nameEn": "Customer Service", "emoji": "🤝" }
+  ]
+}

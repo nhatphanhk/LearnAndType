@@ -1,0 +1,36 @@
+word,meaning,ipa,pos,cefr,example,exampleVi,synonyms,collocations,family
+itinerary,lịch trình chuyến đi,/aɪˈtɪnərəri/,n,C1,"Your travel itinerary has been emailed to you.","Lịch trình chuyến đi đã được gửi qua email cho bạn.",schedule;travel plan,detailed itinerary,
+reservation,sự đặt chỗ,/ˌrezəˈveɪʃn/,n,B1,"I'd like to make a reservation for two nights.","Tôi muốn đặt phòng hai đêm.",booking,make a reservation;cancel a reservation,reserve (v)
+reserve,đặt trước,/rɪˈzɜːv/,v,B1,"We reserved a table for six.","Chúng tôi đã đặt bàn cho sáu người.",book;hold,reserve a seat;reserve a room,reservation (n)
+book,đặt (vé/phòng),/bʊk/,v,A2,"Please book a flight to Singapore for Monday.","Vui lòng đặt vé máy bay đi Singapore vào thứ Hai.",reserve;arrange,book a flight;fully booked,booking (n)
+accommodation,chỗ ở,/əˌkɒməˈdeɪʃn/,n,B1,"Accommodation is included in the conference fee.","Phí hội nghị đã bao gồm chỗ ở.",lodging;housing,hotel accommodation;find accommodation,accommodate (v)
+boarding pass,thẻ lên máy bay,/ˈbɔːdɪŋ pɑːs/,n,B1,"Please show your boarding pass at the gate.","Vui lòng xuất trình thẻ lên máy bay ở cửa.",ticket,print a boarding pass,board (v)
+board,lên (tàu/xe/máy bay),/bɔːd/,v,B2,"Passengers may now board the plane.","Hành khách giờ có thể lên máy bay.",get on;embark,board a plane;boarding gate,boarding (n)
+departure,sự khởi hành,/dɪˈpɑːtʃə(r)/,n,B1,"Departure time is 7:30 a.m.","Giờ khởi hành là 7 giờ 30 sáng.",leaving;takeoff,departure lounge;departure gate,depart (v)
+arrival,sự đến nơi,/əˈraɪvl/,n,B1,"Please call me on arrival.","Vui lòng gọi tôi khi đến nơi.",landing;coming,arrival time;on arrival,arrive (v)
+delayed,bị hoãn / chậm,/dɪˈleɪd/,adj,B1,"Our flight was delayed by two hours.","Chuyến bay của chúng tôi bị hoãn hai giờ.",late;held up,delayed flight,delay (v);delay (n)
+layover,quá cảnh,/ˈleɪəʊvə(r)/,n,C1,"We have a three-hour layover in Dubai.","Chúng tôi quá cảnh ba giờ ở Dubai.",stopover;connection,short layover,
+connecting flight,chuyến bay nối chuyến,/kəˈnektɪŋ flaɪt/,n,B2,"I missed my connecting flight.","Tôi đã lỡ chuyến bay nối chuyến.",transfer flight,,
+luggage,hành lý,/ˈlʌɡɪdʒ/,n,A2,"Please don't leave your luggage unattended.","Vui lòng không để hành lý không có người trông.",baggage;bags,carry-on luggage;luggage allowance,
+baggage claim,khu nhận hành lý,/ˈbæɡɪdʒ kleɪm/,n,B2,"Baggage claim is on the ground floor.","Khu nhận hành lý ở tầng trệt.",luggage carousel,,
+aisle,lối đi giữa,/aɪl/,n,B2,"Would you prefer an aisle seat or a window seat?","Bạn muốn ghế cạnh lối đi hay cạnh cửa sổ?",passage;walkway,aisle seat,
+fare,giá vé,/feə(r)/,n,B1,"The train fare has gone up.","Giá vé tàu đã tăng.",ticket price;charge,bus fare;air fare;one-way fare,
+round-trip,khứ hồi,/ˌraʊnd ˈtrɪp/,adj,B1,"A round-trip ticket costs $300.","Vé khứ hồi giá 300 đô la.",return,round-trip ticket,
+one-way,một chiều,/ˌwʌn ˈweɪ/,adj,B1,"I need a one-way ticket to Paris.","Tôi cần một vé một chiều đi Paris.",single,one-way ticket;one-way street,
+passenger,hành khách,/ˈpæsɪndʒə(r)/,n,A2,"All passengers must fasten their seat belts.","Tất cả hành khách phải thắt dây an toàn.",traveler;commuter,passenger seat;airline passenger,
+check in,làm thủ tục nhận phòng / lên máy bay,/tʃek ɪn/,v,B1,"You can check in online 24 hours before departure.","Bạn có thể làm thủ tục trực tuyến trước 24 giờ.",register,check in at the hotel;check-in counter,check-in (n)
+check out,trả phòng,/tʃek aʊt/,v,B1,"Guests must check out by noon.","Khách phải trả phòng trước buổi trưa.",leave,check out of a hotel;check-out time,checkout (n)
+suite,phòng hạng sang,/swiːt/,n,C1,"The CEO stayed in the presidential suite.","Giám đốc điều hành ở phòng tổng thống.",luxury room,hotel suite,
+amenities,tiện nghi,/əˈmiːnətiz/,n,C1,"The hotel offers amenities such as a gym and pool.","Khách sạn có các tiện nghi như phòng gym và hồ bơi.",facilities;services,hotel amenities;modern amenities,
+vacancy,phòng trống (khách sạn),/ˈveɪkənsi/,n,B2,"The sign said there were no vacancies.","Biển báo ghi đã hết phòng.",available room,no vacancies,vacant (adj)
+excursion,chuyến tham quan,/ɪkˈskɜːʃn/,n,B2,"We went on a day excursion to the islands.","Chúng tôi tham quan đảo trong một ngày.",trip;outing,day excursion;go on an excursion,
+tour,chuyến du lịch / tham quan,/tʊə(r)/,n,A2,"The tour includes a visit to the museum.","Chuyến tham quan bao gồm ghé bảo tàng.",trip;journey,guided tour;tour guide,tourist (n);tourism (n)
+sightseeing,việc tham quan,/ˈsaɪtsiːɪŋ/,n,B1,"We spent the afternoon sightseeing.","Chúng tôi dành buổi chiều đi tham quan.",touring,go sightseeing;sightseeing tour,
+destination,điểm đến du lịch,/ˌdestɪˈneɪʃn/,n,B1,"Da Nang is a popular tourist destination.","Đà Nẵng là điểm đến du lịch nổi tiếng.",location;place,holiday destination,
+business trip,chuyến công tác,/ˈbɪznəs trɪp/,n,A2,"She is on a business trip to Tokyo.","Cô ấy đang đi công tác ở Tokyo.",work trip,go on a business trip,
+travel agency,đại lý du lịch,/ˈtrævl ˌeɪdʒənsi/,n,B1,"We booked the tour through a travel agency.","Chúng tôi đặt tour qua đại lý du lịch.",travel agent;tour operator,,
+passport,hộ chiếu,/ˈpɑːspɔːt/,n,A2,"Your passport must be valid for six months.","Hộ chiếu của bạn phải còn hạn sáu tháng.",travel document,renew a passport;passport control,
+visa,thị thực,/ˈviːzə/,n,B1,"Do I need a visa to enter Japan?","Tôi có cần thị thực để vào Nhật không?",permit,apply for a visa;tourist visa,
+commute,đi lại (đi làm hàng ngày),/kəˈmjuːt/,v,B2,"He commutes to work by subway.","Anh ấy đi làm hàng ngày bằng tàu điện ngầm.",travel,daily commute;commute to work,commuter (n);commute (n)
+shuttle,xe đưa đón,/ˈʃʌtl/,n,B2,"A free shuttle runs between the airport and the hotel.","Có xe đưa đón miễn phí giữa sân bay và khách sạn.",bus;transfer,shuttle bus;airport shuttle,
+rental,cho thuê,/ˈrentl/,n,B2,"We picked up a rental car at the airport.","Chúng tôi lấy xe thuê ở sân bay.",hire;lease,car rental;rental agreement,rent (v)

@@ -1,0 +1,14 @@
+{
+  "id": "ielts",
+  "version": 1,
+  "name": "IELTS học thuật",
+  "nameEn": "IELTS Academic",
+  "emoji": "🎓",
+  "description": "Từ vựng học thuật cho IELTS Reading & Writing.",
+  "exam": "ielts",
+  "sources": ["Mẫu"],
+  "topics": [
+    { "id": "environment", "name": "Môi trường", "nameEn": "Environment", "emoji": "🌍" },
+    { "id": "research", "name": "Nghiên cứu", "nameEn": "Research", "emoji": "🔬" }
+  ]
+}

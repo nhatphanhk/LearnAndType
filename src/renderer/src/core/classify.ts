@@ -1,3 +1,4 @@
+import { examTopicName, lookupExam, type ExamIndex, type ExamTopicRef } from './examClassify'
 import { BUILTIN_TOPICS } from '@/data/builtin'
 import type { Topic, Word } from '@/types'
 import { pluralBases } from './extract'
@@ -479,7 +480,7 @@ export type Target =
   | { kind: 'topic'; topicId: string }
   | { kind: 'new'; name: string; nameEn: string; emoji: string; description: string }
 
-export type TargetReason = 'csv' | 'existing' | 'mine' | 'template' | 'fallback'
+export type TargetReason = 'csv' | 'existing' | 'mine' | 'template' | 'exam' | 'fallback'
 
 export interface Suggestion {
   target: Target
@@ -502,6 +503,27 @@ export function categoryTarget(c: Category): Target {
   return { kind: 'new', name: c.name, nameEn: c.nameEn, emoji: c.emoji, description: c.description }
 }
 
+/** Chủ đề tự tạo cho một chủ đề thi, VD "TOEIC · Tài chính & kế toán". */
+export function examTarget(ref: ExamTopicRef): Target {
+  return newTarget(examTopicName(ref), {
+    nameEn: `${ref.exam.toUpperCase()} · ${ref.nameEn}`,
+    emoji: ref.emoji,
+    description: `Từ thuộc chủ đề ${ref.name} (${ref.packName}).`
+  })
+}
+
+/**
+ * Chủ đề đích theo tên (VD từ file phân loại): tên trùng chủ đề thi hoặc chủ đề mẫu thì mang theo emoji / tên tiếng Anh,
+ * không thì là chủ đề mới chỉ có tên. Gọi `classifier.resolve` sau đó để dùng lại chủ đề đã có cùng tên.
+ */
+export function targetForTopicName(name: string, refs: readonly ExamTopicRef[] = []): Target {
+  const k = normalizeName(name)
+  const ref = refs.find((r) => normalizeName(examTopicName(r)) === k)
+  if (ref) return examTarget(ref)
+  const cat = CATEGORIES.find((c) => normalizeName(c.name) === k)
+  return cat ? categoryTarget(cat) : newTarget(name)
+}
+
 export interface ClassifyContext {
   /** Chủ đề do người dùng tạo (không gồm chủ đề có sẵn). */
   topics: readonly Topic[]
@@ -510,6 +532,11 @@ export interface ClassifyContext {
   fallback: Target
   /** Bảng chủ đề WordNet (nếu đã tải). */
   wordnet?: WordnetTopics
+  /**
+   * Bảng từ của gói luyện thi (TOEIC / IELTS, nếu đã tải): từ không đoán được chủ đề mẫu nhưng có trong gói
+   * → xếp vào chủ đề thi tương ứng (VD "TOEIC · Tài chính & kế toán") thay vì chủ đề dự phòng.
+   */
+  exam?: ExamIndex
 }
 
 export interface Classifier {
@@ -558,6 +585,10 @@ export function buildClassifier(ctx: ClassifyContext): Classifier {
       const mine = categoryTopic.get(guess.id)
       if (mine) return { target: { kind: 'topic', topicId: mine }, reason: 'mine', categoryId: guess.id }
       return { target: resolve(categoryTarget(CATEGORY_BY_ID.get(guess.id)!)), reason: 'template', categoryId: guess.id }
+    }
+    const ref = ctx.exam ? lookupExam(ctx.exam, row.word)?.topics[0] : undefined
+    if (ref) {
+      return { target: resolve(examTarget(ref)), reason: 'exam' }
     }
     return { target: resolve(ctx.fallback), reason: 'fallback' }
   }

@@ -1,0 +1,34 @@
+word,meaning,ipa,pos,cefr,example,exampleVi,synonyms,collocations,family
+software,phần mềm,/ˈsɒftweə(r)/,n,A2,"The new software will be installed tonight.","Phần mềm mới sẽ được cài đặt tối nay.",program;application,install software;software update,
+hardware,phần cứng,/ˈhɑːdweə(r)/,n,B1,"We need to upgrade our computer hardware.","Chúng ta cần nâng cấp phần cứng máy tính.",equipment;devices,computer hardware,
+upgrade,nâng cấp,/ˌʌpˈɡreɪd/,v,B2,"We upgraded the system to the latest version.","Chúng tôi đã nâng cấp hệ thống lên phiên bản mới nhất.",improve;update,upgrade a system;free upgrade,upgrade (n)
+update,cập nhật,/ˌʌpˈdeɪt/,v,A2,"Please update your password every three months.","Vui lòng cập nhật mật khẩu ba tháng một lần.",refresh;revise,software update;update a file,update (n)
+database,cơ sở dữ liệu,/ˈdeɪtəbeɪs/,n,B1,"All customer data is stored in the database.","Mọi dữ liệu khách hàng được lưu trong cơ sở dữ liệu.",data bank;records,customer database;update the database,
+network,mạng lưới,/ˈnetwɜːk/,n,B1,"The office network is down for maintenance.","Mạng văn phòng đang tạm ngưng để bảo trì.",system;web,computer network;network connection,network (v);networking (n)
+server,máy chủ,/ˈsɜːvə(r)/,n,B2,"The server crashed during the night.","Máy chủ bị sập trong đêm.",host computer,web server;server room,serve (v)
+password,mật khẩu,/ˈpɑːswɜːd/,n,A2,"Never share your password with anyone.","Đừng bao giờ chia sẻ mật khẩu với ai.",passcode;PIN,reset a password;strong password,
+log in,đăng nhập,/lɒɡ ɪn/,v,B1,"Log in with your employee ID.","Đăng nhập bằng mã nhân viên của bạn.",sign in,log in to the system,login (n)
+access,truy cập,/ˈækses/,v,B1,"You can access your files from any device.","Bạn có thể truy cập tệp từ mọi thiết bị.",reach;open,access the internet;have access to,access (n);accessible (adj)
+download,tải xuống,/ˌdaʊnˈləʊd/,v,A2,"Download the app from our website.","Hãy tải ứng dụng từ trang web của chúng tôi.",get;transfer,download a file;free download,download (n)
+backup,bản sao lưu,/ˈbækʌp/,n,B2,"Always keep a backup of important files.","Luôn giữ bản sao lưu các tệp quan trọng.",copy;reserve,make a backup;backup copy,back up (v)
+troubleshoot,khắc phục sự cố,/ˈtrʌblʃuːt/,v,C1,"The IT team is troubleshooting the problem.","Đội IT đang khắc phục sự cố.",fix;diagnose,troubleshoot a problem,troubleshooting (n)
+technical support,hỗ trợ kỹ thuật,/ˈteknɪkl səˈpɔːt/,n,B2,"Contact technical support if the printer fails.","Liên hệ hỗ trợ kỹ thuật nếu máy in hỏng.",IT support;help desk,,
+device,thiết bị,/dɪˈvaɪs/,n,B1,"Turn off all electronic devices during the flight.","Tắt mọi thiết bị điện tử trong chuyến bay.",gadget;appliance,mobile device;electronic device,
+compatible,tương thích,/kəmˈpætəbl/,adj,C1,"This software is compatible with all systems.","Phần mềm này tương thích với mọi hệ thống.",suitable;consistent,compatible with,compatibility (n)
+innovative,đổi mới / sáng tạo,/ˈɪnəveɪtɪv/,adj,C1,"The company is known for innovative products.","Công ty nổi tiếng với sản phẩm sáng tạo.",creative;original,innovative design;innovative solution,innovation (n);innovate (v)
+innovation,sự đổi mới,/ˌɪnəˈveɪʃn/,n,B2,"Technology drives innovation in every industry.","Công nghệ thúc đẩy đổi mới trong mọi ngành.",invention;advance,encourage innovation;technological innovation,innovate (v);innovative (adj)
+user,người dùng,/ˈjuːzə(r)/,n,A2,"The app has over a million users.","Ứng dụng có hơn một triệu người dùng.",customer;operator,user-friendly;user account,use (v)
+user-friendly,dễ sử dụng,/ˌjuːzə ˈfrendli/,adj,B2,"The new website is more user-friendly.","Trang web mới dễ sử dụng hơn.",easy to use;intuitive,,
+interface,giao diện,/ˈɪntəfeɪs/,n,C1,"The interface is simple and clear.","Giao diện đơn giản và rõ ràng.",display;layout,user interface,
+encrypt,mã hóa,/ɪnˈkrɪpt/,v,C1,"All payment data is encrypted.","Mọi dữ liệu thanh toán đều được mã hóa.",encode;protect,encrypt data,encryption (n)
+security,bảo mật / an ninh,/sɪˈkjʊərəti/,n,B1,"We take data security very seriously.","Chúng tôi rất coi trọng bảo mật dữ liệu.",protection;safety,security system;data security,secure (adj);securely (adv)
+virus,vi-rút (máy tính),/ˈvaɪrəs/,n,B1,"Install software to protect against viruses.","Cài phần mềm để bảo vệ khỏi vi-rút.",malware,computer virus;antivirus software,
+malfunction,trục trặc (thiết bị),/ˌmælˈfʌŋkʃn/,v,C1,"The scanner malfunctioned again.","Máy quét lại bị trục trặc.",break down;fail,,malfunction (n)
+specification,thông số,/ˌspesɪfɪˈkeɪʃn/,n,C1,"Check the laptop's specifications before buying.","Hãy kiểm tra thông số máy trước khi mua.",spec;feature,technical specification,specify (v)
+wireless,không dây,/ˈwaɪələs/,adj,B2,"Wireless internet is available throughout the hotel.","Internet không dây có ở khắp khách sạn.",Wi-Fi;cordless,wireless connection;wireless network,
+online,trực tuyến,/ˌɒnˈlaɪn/,adj,A2,"You can pay your bills online.","Bạn có thể thanh toán hóa đơn trực tuyến.",on the internet;digital,online shopping;go online,
+digital,kỹ thuật số,/ˈdɪdʒɪtl/,adj,B1,"We are moving to digital records.","Chúng tôi đang chuyển sang hồ sơ kỹ thuật số.",electronic;computerized,digital camera;digital marketing,digitize (v);digitally (adv)
+automated,tự động,/ˈɔːtəmeɪtɪd/,adj,C1,"Orders are processed by an automated system.","Đơn hàng được xử lý bởi hệ thống tự động.",automatic;computerized,automated system,automate (v);automation (n)
+artificial intelligence,trí tuệ nhân tạo,/ˌɑːtɪfɪʃl ɪnˈtelɪdʒəns/,n,B2,"Artificial intelligence helps answer customer questions.","Trí tuệ nhân tạo giúp trả lời câu hỏi của khách hàng.",AI;machine learning,,
+cloud,đám mây (lưu trữ),/klaʊd/,n,B2,"Our files are stored in the cloud.","Tệp của chúng tôi được lưu trên đám mây.",online storage,cloud storage;cloud computing,
+glitch,lỗi nhỏ,/ɡlɪtʃ/,n,C1,"A technical glitch delayed the launch.","Một lỗi kỹ thuật nhỏ đã làm chậm buổi ra mắt.",bug;fault,technical glitch,

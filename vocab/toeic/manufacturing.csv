@@ -1,0 +1,36 @@
+word,meaning,ipa,pos,cefr,example,exampleVi,synonyms,collocations,family
+manufacture,sản xuất,/ˌmænjuˈfæktʃə(r)/,v,B2,"The factory manufactures car parts.","Nhà máy sản xuất linh kiện ô tô.",produce;make,manufacture goods,manufacturer (n);manufacturing (n)
+manufacturer,nhà sản xuất,/ˌmænjuˈfæktʃərə(r)/,n,B2,"Contact the manufacturer for repairs.","Hãy liên hệ nhà sản xuất để sửa chữa.",producer;maker,car manufacturer;leading manufacturer,manufacture (v)
+factory,nhà máy,/ˈfæktri/,n,A2,"The factory employs 800 workers.","Nhà máy tuyển dụng 800 công nhân.",plant;mill,factory worker;factory floor,
+plant,nhà máy / xí nghiệp,/plɑːnt/,n,B2,"The company is building a new plant in Hanoi.","Công ty đang xây một nhà máy mới ở Hà Nội.",factory;facility,power plant;manufacturing plant,
+assembly line,dây chuyền lắp ráp,/əˈsembli laɪn/,n,B2,"Robots now work on the assembly line.","Robot hiện làm việc trên dây chuyền lắp ráp.",production line,work on an assembly line,
+assemble,lắp ráp,/əˈsembl/,v,B2,"The parts are assembled in Mexico.","Các bộ phận được lắp ráp ở Mexico.",put together;build,assemble a product;easy to assemble,assembly (n)
+production,sự sản xuất,/prəˈdʌkʃn/,n,B1,"Production increased by 15 percent.","Sản lượng đã tăng 15%.",output;manufacturing,mass production;production line;production costs,produce (v);product (n);productive (adj)
+output,sản lượng,/ˈaʊtpʊt/,n,B2,"The plant's output doubled last year.","Sản lượng của nhà máy đã tăng gấp đôi năm ngoái.",production;yield,increase output;total output,
+capacity,công suất,/kəˈpæsəti/,n,B2,"The factory is running at full capacity.","Nhà máy đang chạy hết công suất.",volume;capability,full capacity;production capacity,capable (adj)
+equipment,thiết bị,/ɪˈkwɪpmənt/,n,B1,"All equipment must be inspected weekly.","Mọi thiết bị phải được kiểm tra hàng tuần.",machinery;gear,safety equipment;office equipment,equip (v)
+machinery,máy móc,/məˈʃiːnəri/,n,B2,"The new machinery will improve efficiency.","Máy móc mới sẽ nâng cao hiệu suất.",equipment;machines,heavy machinery;operate machinery,machine (n)
+operate,vận hành,/ˈɒpəreɪt/,v,B1,"Only trained workers may operate this machine.","Chỉ công nhân được đào tạo mới được vận hành máy này.",run;use,operate a machine;operate a business,operation (n);operator (n);operational (adj)
+maintenance,bảo trì,/ˈmeɪntənəns/,n,B2,"The machines are closed for maintenance.","Máy đang tạm ngừng để bảo trì.",upkeep;servicing,routine maintenance;maintenance staff,maintain (v)
+maintain,duy trì / bảo dưỡng,/meɪnˈteɪn/,v,B2,"We maintain all equipment regularly.","Chúng tôi bảo dưỡng tất cả thiết bị thường xuyên.",keep up;service,maintain quality;maintain equipment,maintenance (n)
+inspect,kiểm tra,/ɪnˈspekt/,v,B2,"Each product is inspected before packaging.","Mỗi sản phẩm được kiểm tra trước khi đóng gói.",examine;check,inspect equipment,inspection (n);inspector (n)
+inspection,sự kiểm tra,/ɪnˈspekʃn/,n,B2,"The factory passed the safety inspection.","Nhà máy đã vượt qua kiểm tra an toàn.",examination;check,safety inspection;carry out an inspection,inspect (v);inspector (n)
+quality control,kiểm soát chất lượng,/ˈkwɒləti kənˈtrəʊl/,n,B2,"She works in quality control.","Cô ấy làm ở bộ phận kiểm soát chất lượng.",quality assurance;QC,quality control department,
+standard,tiêu chuẩn,/ˈstændəd/,n,B1,"Our products meet international standards.","Sản phẩm của chúng tôi đạt tiêu chuẩn quốc tế.",norm;criterion,safety standards;meet standards,standardize (v)
+defect,lỗi / khuyết tật,/ˈdiːfekt/,n,C1,"Workers found a defect in the engine.","Công nhân đã phát hiện lỗi trong động cơ.",flaw;fault,manufacturing defect,defective (adj)
+raw material,nguyên liệu thô,/rɔː məˈtɪəriəl/,n,B2,"The price of raw materials keeps rising.","Giá nguyên liệu thô liên tục tăng.",resource;input,,
+component,linh kiện,/kəmˈpəʊnənt/,n,B2,"The components are imported from Japan.","Linh kiện được nhập khẩu từ Nhật Bản.",part;element,electronic components;key component,
+prototype,nguyên mẫu,/ˈprəʊtətaɪp/,n,C1,"Engineers are testing the prototype.","Các kỹ sư đang thử nghiệm nguyên mẫu.",model;sample,build a prototype,
+efficiency,hiệu suất,/ɪˈfɪʃnsi/,n,B2,"New software improved production efficiency.","Phần mềm mới cải thiện hiệu suất sản xuất.",productivity;effectiveness,energy efficiency;improve efficiency,efficient (adj);efficiently (adv)
+automate,tự động hóa,/ˈɔːtəmeɪt/,v,C1,"The process has been fully automated.","Quy trình đã được tự động hóa hoàn toàn.",mechanize;computerize,automate a process,automation (n);automatic (adj)
+safety,sự an toàn,/ˈseɪfti/,n,B1,"Wear a helmet for your safety.","Hãy đội mũ bảo hiểm để đảm bảo an toàn.",security;protection,safety regulations;safety gear,safe (adj);safely (adv)
+protective,bảo hộ,/prəˈtektɪv/,adj,B2,"Workers must wear protective clothing.","Công nhân phải mặc quần áo bảo hộ.",defensive;safety,protective gear;protective equipment,protect (v);protection (n)
+hazard,mối nguy hiểm,/ˈhæzəd/,n,C1,"Wet floors are a safety hazard.","Sàn ướt là mối nguy hiểm.",danger;risk,health hazard;fire hazard,hazardous (adj)
+malfunction,trục trặc,/ˌmælˈfʌŋkʃn/,n,C1,"A machine malfunction stopped production.","Máy trục trặc đã làm ngừng sản xuất.",breakdown;failure,equipment malfunction,malfunction (v)
+repair,sửa chữa,/rɪˈpeə(r)/,v,A2,"The technician repaired the conveyor belt.","Kỹ thuật viên đã sửa băng chuyền.",fix;mend,repair work;under repair,repair (n)
+technician,kỹ thuật viên,/tekˈnɪʃn/,n,B2,"A technician will check the machine tomorrow.","Một kỹ thuật viên sẽ kiểm tra máy vào ngày mai.",engineer;mechanic,lab technician;repair technician,technical (adj)
+facility,cơ sở / nhà xưởng,/fəˈsɪləti/,n,B2,"The new facility covers 10,000 square meters.","Cơ sở mới rộng 10.000 mét vuông.",plant;building,production facility;storage facility,facilitate (v)
+procedure,quy trình,/prəˈsiːdʒə(r)/,n,B2,"Follow the safety procedures at all times.","Luôn tuân theo quy trình an toàn.",process;method,standard procedure;follow a procedure,procedural (adj)
+process,quy trình / xử lý,/ˈprəʊses/,n,B1,"The production process takes four hours.","Quy trình sản xuất mất bốn giờ.",procedure;method,manufacturing process;process an order,process (v);processing (n)
+sustainable,bền vững,/səˈsteɪnəbl/,adj,C1,"We are switching to sustainable materials.","Chúng tôi đang chuyển sang vật liệu bền vững.",eco-friendly;renewable,sustainable development,sustainability (n);sustain (v)
+durable,bền,/ˈdjʊərəbl/,adj,C1,"These boots are made of durable leather.","Những đôi ủng này làm từ da bền.",long-lasting;sturdy,durable material,durability (n)

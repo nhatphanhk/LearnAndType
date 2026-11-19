@@ -5,16 +5,25 @@ import {
   buildClassifier,
   buildTargetOptions,
   normalizeName,
+  targetForTopicName,
   targetKey,
   type Classifier,
+  type Target,
   type TargetOption
 } from '@/core/classify'
+import { parseClassificationCsv } from '@/core/csv'
+import { examTopics } from '@/core/examClassify'
+import { toCefr } from '@/core/packs'
+import { loadBundledPacks } from '@/data/packs'
+import { pickFile } from '@/download'
 import { GeminiError, classifyWithGemini, geminiErrorMessage } from '@/core/gemini'
 import { loadWordnetTopics, type WordnetTopics } from '@/core/wordnet'
-import { moveWords, type MoveWordsResult } from '@/db/repo'
+import { loadExamIndex } from '@/data/examIndex'
+import type { ExamIndex } from '@/core/examClassify'
+import { moveWords, saveWordLabels, type MoveWordsResult } from '@/db/repo'
 import { groupByTopic, useTopics, useWords } from '@/hooks/useData'
 import { useSettings } from '@/store/settingsStore'
-import type { Topic, Word } from '@/types'
+import type { Cefr, Topic, Word } from '@/types'
 import { toast } from './Toast'
 import { Badge, Button, cx, inputCls } from './ui'
 
@@ -38,18 +47,24 @@ export interface Reclassifier {
   suggest: (w: Word) => string
 }
 
-/** Bộ phân loại cho các từ đã lưu trong `topic` (không gợi ý lại chính chủ đề đó). */
-export function useReclassifier(topic: Topic, words: readonly Word[]): Reclassifier {
+const NO_TARGETS: readonly Target[] = []
+
+/**
+ * Bộ phân loại cho các từ đã lưu trong `topic` (không gợi ý lại chính chủ đề đó).
+ * `extraTargets`: chủ đề đích bổ sung (VD đọc từ file phân loại) để có trong danh sách chọn.
+ */
+export function useReclassifier(topic: Topic, words: readonly Word[], extraTargets: readonly Target[] = NO_TARGETS): Reclassifier {
   const topics = useTopics() ?? NO_TOPICS
   const allWords = useWords() ?? NO_WORDS
   const [wordnet, setWordnet] = useState<WordnetTopics | undefined>()
   const [ready, setReady] = useState(false)
+  const [exam, setExam] = useState<ExamIndex | undefined>()
   useEffect(() => {
     let alive = true
-    loadWordnetTopics()
-      .then((m) => alive && setWordnet(m))
-      .catch(() => undefined)
-      .finally(() => alive && setReady(true))
+    void Promise.allSettled([
+      loadWordnetTopics().then((m) => alive && setWordnet(m)),
+      loadExamIndex().then((m) => alive && setExam(m))
+    ]).finally(() => alive && setReady(true))
     return () => {
       alive = false
     }
@@ -58,8 +73,8 @@ export function useReclassifier(topic: Topic, words: readonly Word[]): Reclassif
   const others = useMemo(() => topics.filter((t) => !t.isBuiltIn && t.id !== topic.id), [topics, topic.id])
   const wordsByTopic = useMemo(() => groupByTopic(allWords), [allWords])
   const classifier = useMemo(
-    () => buildClassifier({ topics: others, wordsByTopic, fallback: { kind: 'topic', topicId: topic.id }, wordnet }),
-    [others, wordsByTopic, topic.id, wordnet]
+    () => buildClassifier({ topics: others, wordsByTopic, fallback: { kind: 'topic', topicId: topic.id }, wordnet, exam }),
+    [others, wordsByTopic, topic.id, wordnet, exam]
   )
   const sourceName = normalizeName(topic.name)
 
@@ -70,7 +85,7 @@ export function useReclassifier(topic: Topic, words: readonly Word[]): Reclassif
       raw.set(w.id, s.reason === 'fallback' ? KEEP : targetKey(s.target))
       return s.target
     })
-    const options = buildTargetOptions({ classifier, topics: others, extra, withCategories: true })
+    const options = buildTargetOptions({ classifier, topics: others, extra: [...extra, ...extraTargets], withCategories: true })
     // Chủ đề "mới" trùng tên chủ đề hiện tại = chính nó → bỏ (VD chủ đề "Động vật" của tôi ↔ chủ đề mẫu "Động vật")
     for (const [k, o] of options) if (o.target.kind === 'new' && normalizeName(o.target.name) === sourceName) options.delete(k)
     const suggest = (w: Word): string => {
@@ -78,7 +93,7 @@ export function useReclassifier(topic: Topic, words: readonly Word[]): Reclassif
       return options.has(k) ? k : KEEP
     }
     return { ready, options, classifier, suggest }
-  }, [words, classifier, others, sourceName, ready])
+  }, [words, classifier, others, sourceName, ready, extraTargets])
 }
 
 interface Row {
@@ -99,7 +114,10 @@ export function Reclassify({
   onDone: (res: MoveWordsResult, emptied: boolean) => void
   onCancel: () => void
 }): ReactNode {
-  const { ready, options, suggest } = useReclassifier(topic, words)
+  const [fileTargets, setFileTargets] = useState<readonly Target[]>(NO_TARGETS)
+  /** Cấp độ CEFR đọc từ file phân loại, lưu kèm khi chuyển. */
+  const [fileCefr, setFileCefr] = useState<ReadonlyMap<string, Cefr>>(new Map())
+  const { ready, options, suggest, classifier } = useReclassifier(topic, words, fileTargets)
   const allWords = useWords() ?? NO_WORDS
   const wordsByTopic = useMemo(() => groupByTopic(allWords), [allWords])
   const [rows, setRows] = useState<Record<string, Row>>(() => Object.fromEntries(words.map((w) => [w.id, { checked: true }])))
@@ -183,12 +201,54 @@ export function Reclassify({
     if (todo.length) void runAi(todo)
   }, [ready, apiKey, aiAuto, aiBusy, aiPendingKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* ------------------------- Áp dụng phân loại từ file ------------------------- */
+
+  const applyFile = async (): Promise<void> => {
+    const file = await pickFile('.csv,text/csv')
+    if (!file) return
+    const map = parseClassificationCsv(await file.text())
+    if (map.size === 0) {
+      toast.error('File không có cột "word" và "topic" (hoặc "từ" và "chủ đề").')
+      return
+    }
+    const refs = examTopics(await loadBundledPacks().catch(() => []))
+    const targets: Target[] = []
+    const manual = new Map<string, string>()
+    const cefr = new Map<string, Cefr>()
+    for (const w of words) {
+      const e = map.get(w.word.trim().replace(/\s+/g, ' ').toLowerCase())
+      if (!e) continue
+      const t = classifier.resolve(targetForTopicName(e.topic, refs))
+      targets.push(t)
+      manual.set(w.id, targetKey(t))
+      const c = toCefr(e.cefr)
+      if (c && !w.cefr) cefr.set(w.id, c)
+    }
+    setFileTargets(targets)
+    setFileCefr(cefr)
+    setRows((rs) => {
+      const next = { ...rs }
+      for (const [id, key] of manual) next[id] = { ...(next[id] ?? { checked: true }), manual: key, checked: true }
+      return next
+    })
+    const missing = words.length - manual.size
+    toast.success(
+      `Áp dụng phân loại cho ${manual.size}/${words.length} từ` +
+        (missing ? ` · ${missing} từ không có trong file (giữ gợi ý cũ)` : '') +
+        (cefr.size ? ` · sẽ lưu cấp độ cho ${cefr.size} từ` : '')
+    )
+  }
+
   /* --------------------------------- Chuyển --------------------------------- */
 
   const submit = async (): Promise<void> => {
     if (!moving.length) return toast.error('Chưa có từ nào cần chuyển.')
     setBusy(true)
     try {
+      // Lưu cấp độ CEFR từ file trước khi chuyển (từ giữ id nên nhãn đi theo)
+      if (fileCefr.size) {
+        await saveWordLabels(moving.flatMap((w) => (fileCefr.has(w.id) ? [{ id: w.id, cefr: fileCefr.get(w.id) }] : [])))
+      }
       const res = await moveWords(groupList.map((g) => ({ target: g.option.target, wordIds: g.ids })))
       const names = res.results.map((r) => `"${r.name}"${r.created ? ' (mới)' : ''}`).join(', ')
       toast.success(
@@ -233,6 +293,9 @@ export function Reclassify({
                 </Button>
               )
             ))}
+          <Button size="sm" disabled={!ready || aiBusy > 0} onClick={() => void applyFile()} title="File CSV có cột word, topic (và cefr)">
+            📄 Áp dụng từ file CSV
+          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -332,6 +395,7 @@ export function Reclassify({
                   <td className="py-1.5 pr-3 text-right">
                     <div className="flex flex-col items-end gap-1">
                       {!r.manual && r.ai && options.has(r.ai) && <Badge tone="indigo">🤖 AI</Badge>}
+                      {fileCefr.has(w.id) && <Badge tone="slate">{fileCefr.get(w.id)}</Badge>}
                       {!keep && isDupe(w, key) && <Badge tone="amber">Đã có ở đích · gộp</Badge>}
                     </div>
                   </td>

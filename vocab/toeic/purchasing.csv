@@ -1,0 +1,36 @@
+word,meaning,ipa,pos,cefr,example,exampleVi,synonyms,collocations,family
+purchase,mua / sự mua,/ˈpɜːtʃəs/,v,B1,"You can purchase tickets online.","Bạn có thể mua vé trực tuyến.",buy;acquire,make a purchase;proof of purchase,purchase (n);purchaser (n)
+order,đặt hàng / đơn hàng,/ˈɔːdə(r)/,v,A2,"We ordered 200 units from the supplier.","Chúng tôi đã đặt 200 sản phẩm từ nhà cung cấp.",request;buy,place an order;order form;back order,order (n)
+supplier,nhà cung cấp,/səˈplaɪə(r)/,n,B2,"We are looking for a new paper supplier.","Chúng tôi đang tìm nhà cung cấp giấy mới.",vendor;provider,main supplier;reliable supplier,supply (v);supplies (n)
+vendor,nhà cung cấp / người bán,/ˈvendə(r)/,n,C1,"The vendor offered a bulk discount.","Nhà cung cấp đề nghị giảm giá khi mua số lượng lớn.",seller;supplier,approved vendor;street vendor,
+quote,báo giá,/kwəʊt/,n,B2,"Could you send us a quote for 500 chairs?","Bạn có thể gửi báo giá cho 500 chiếc ghế không?",estimate;quotation,price quote;get a quote,quote (v);quotation (n)
+quotation,bản báo giá,/kwəʊˈteɪʃn/,n,C1,"We received three quotations for the job.","Chúng tôi nhận được ba bản báo giá cho công việc.",quote;estimate,request a quotation,quote (v)
+bulk,số lượng lớn,/bʌlk/,n,C1,"Buying in bulk saves money.","Mua số lượng lớn giúp tiết kiệm tiền.",large quantity,in bulk;bulk order,bulky (adj)
+quantity,số lượng,/ˈkwɒntəti/,n,B1,"Please check the quantity before signing.","Vui lòng kiểm tra số lượng trước khi ký.",amount;number,large quantity;quantity discount,quantify (v)
+inventory,hàng tồn kho,/ˈɪnvəntri/,n,C1,"We take inventory at the end of each month.","Chúng tôi kiểm kê hàng tồn kho vào cuối mỗi tháng.",stock;goods,take inventory;inventory control,
+in stock,còn hàng,/ɪn stɒk/,phr,B1,"Is this model in stock?","Mẫu này còn hàng không?",available,keep in stock,
+out of stock,hết hàng,/aʊt əv stɒk/,phr,B1,"The item is currently out of stock.","Mặt hàng hiện đang hết hàng.",unavailable;sold out,,
+catalog,danh mục sản phẩm,/ˈkætəlɒɡ/,n,B2,"Our new catalog lists all summer products.","Danh mục mới liệt kê tất cả sản phẩm mùa hè.",brochure;list,product catalog;online catalog,catalog (v)
+brochure,tờ quảng cáo / cẩm nang,/ˈbrəʊʃə(r)/,n,B1,"Please take a brochure at the front desk.","Vui lòng lấy một tờ giới thiệu ở quầy lễ tân.",leaflet;pamphlet,travel brochure;product brochure,
+item,mặt hàng,/ˈaɪtəm/,n,A2,"Each item is checked before shipping.","Mỗi mặt hàng được kiểm tra trước khi giao.",article;product,list of items;item number,itemize (v)
+merchandise,hàng hóa,/ˈmɜːtʃəndaɪs/,n,C1,"All merchandise is 20 percent off this week.","Tất cả hàng hóa được giảm 20% trong tuần này.",goods;products,sell merchandise,merchant (n)
+goods,hàng hóa,/ɡʊdz/,n,B1,"The goods arrived in good condition.","Hàng hóa đến nơi trong tình trạng tốt.",products;merchandise,consumer goods;damaged goods,
+payment,sự thanh toán,/ˈpeɪmənt/,n,B1,"Payment is due within 30 days.","Thanh toán đến hạn trong vòng 30 ngày.",settlement;remittance,make a payment;payment method;advance payment,pay (v);payable (adj)
+payable,phải trả,/ˈpeɪəbl/,adj,C1,"The invoice is payable on receipt.","Hóa đơn phải được thanh toán khi nhận.",due;owed,accounts payable;payable to,pay (v);payment (n)
+cash on delivery,thanh toán khi nhận hàng,/kæʃ ɒn dɪˈlɪvəri/,phr,B2,"We accept cash on delivery for local orders.","Chúng tôi nhận thanh toán khi nhận hàng cho đơn nội địa.",COD,,
+refund,hoàn tiền,/ˈriːfʌnd/,n,B1,"You can get a full refund within 14 days.","Bạn có thể được hoàn tiền đầy đủ trong vòng 14 ngày.",reimbursement;repayment,full refund;request a refund,refund (v);refundable (adj)
+exchange,đổi hàng,/ɪksˈtʃeɪndʒ/,v,B1,"Can I exchange this shirt for a larger size?","Tôi có thể đổi chiếc áo này lấy cỡ lớn hơn không?",swap;replace,exchange an item,exchange (n)
+defective,bị lỗi,/dɪˈfektɪv/,adj,C1,"Defective products will be replaced free of charge.","Sản phẩm lỗi sẽ được đổi miễn phí.",faulty;broken,defective item;defective product,defect (n)
+faulty,bị hỏng / có lỗi,/ˈfɔːlti/,adj,B2,"The faulty cable caused the problem.","Sợi cáp hỏng đã gây ra sự cố.",defective;broken,faulty equipment,fault (n)
+replace,thay thế,/rɪˈpleɪs/,v,B1,"We will replace the damaged parts.","Chúng tôi sẽ thay các bộ phận bị hỏng.",substitute;change,replace with;replace a part,replacement (n)
+replacement,sự thay thế,/rɪˈpleɪsmənt/,n,B2,"A replacement will be sent tomorrow.","Hàng thay thế sẽ được gửi vào ngày mai.",substitute;exchange,replacement part,replace (v)
+backorder,đơn hàng chờ (hết hàng tạm thời),/ˈbækɔːdə(r)/,n,C1,"The printer ink is on backorder.","Mực in đang trong tình trạng chờ hàng.",pending order,on backorder,
+specification,thông số kỹ thuật,/ˌspesɪfɪˈkeɪʃn/,n,C1,"The machine meets all our specifications.","Máy đáp ứng mọi thông số kỹ thuật của chúng tôi.",requirement;detail,technical specifications;meet specifications,specify (v);specific (adj)
+requisition,yêu cầu cấp vật tư,/ˌrekwɪˈzɪʃn/,n,C1,"Fill out a requisition form for new equipment.","Điền phiếu yêu cầu để xin thiết bị mới.",request;order,purchase requisition,
+procurement,sự thu mua,/prəˈkjʊəmənt/,n,C1,"She works in the procurement department.","Cô ấy làm ở phòng thu mua.",purchasing;acquisition,procurement process,procure (v)
+budget-friendly,tiết kiệm / giá rẻ,/ˈbʌdʒɪt ˌfrendli/,adj,B2,"We offer several budget-friendly options.","Chúng tôi có nhiều lựa chọn giá rẻ.",affordable;inexpensive,,
+reasonable,hợp lý (giá),/ˈriːznəbl/,adj,B1,"The prices at this store are very reasonable.","Giá ở cửa hàng này rất hợp lý.",fair;affordable,reasonable price,reasonably (adv)
+expensive,đắt,/ɪkˈspensɪv/,adj,A1,"The new software is too expensive.","Phần mềm mới quá đắt.",costly;pricey,extremely expensive,expense (n);expensively (adv)
+voucher,phiếu mua hàng,/ˈvaʊtʃə(r)/,n,B2,"Use this voucher to get $10 off.","Dùng phiếu này để được giảm 10 đô la.",coupon;token,gift voucher;discount voucher,
+coupon,phiếu giảm giá,/ˈkuːpɒn/,n,B2,"Customers can download coupons from our app.","Khách hàng có thể tải phiếu giảm giá từ ứng dụng.",voucher;discount,redeem a coupon,
+place,đặt (đơn hàng),/pleɪs/,v,B1,"I'd like to place an order for printer paper.","Tôi muốn đặt một đơn giấy in.",put in;submit,place an order,placement (n)

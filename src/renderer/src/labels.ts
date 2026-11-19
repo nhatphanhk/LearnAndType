@@ -12,6 +12,8 @@ export const KIND_INFO: Record<SessionKind, { title: string; icon: string; desc:
   recall: { title: 'Nhớ từ', icon: '🧠', desc: 'Chỉ thấy nghĩa (và ảnh nếu có), tự gõ ra từ tiếng Anh.' },
   listen: { title: 'Nghe & gõ', icon: '🎧', desc: 'Nghe phát âm và gõ lại từ nghe được.' },
   cloze: { title: 'Điền vào câu', icon: '🧩', desc: 'Điền từ còn thiếu vào câu ví dụ.' },
+  choice: { title: 'Trắc nghiệm', icon: '✅', desc: 'Chọn 1 trong 4 đáp án điền vào câu (kiểu TOEIC Part 5).' },
+  drill: { title: 'Luyện chuyên sâu', icon: '🧬', desc: 'Họ từ, từ đồng nghĩa (paraphrase) và collocation — dạng bẫy hay gặp khi thi.' },
   review: { title: 'Ôn tập', icon: '🔁', desc: 'Ôn các từ đến hạn theo lịch lặp lại ngắt quãng.' },
   retry: { title: 'Luyện lại từ sai', icon: '🎯', desc: 'Gõ lại những từ vừa trả lời sai.' },
   game: { title: 'Trò chơi', icon: '🎮', desc: 'Mini-game gõ từ: Từ rơi, Đua 60 giây.' }
@@ -21,7 +23,11 @@ export const MODE_LABEL: Record<PracticeMode, string> = {
   copy: 'Chép từ',
   recall: 'Nhớ từ',
   listen: 'Nghe & gõ',
-  cloze: 'Điền vào câu'
+  cloze: 'Điền vào câu',
+  family: 'Họ từ',
+  synonym: 'Đồng nghĩa',
+  collocation: 'Collocation',
+  choice: 'Trắc nghiệm'
 }
 
 export const POS_LABEL: Record<string, string> = {

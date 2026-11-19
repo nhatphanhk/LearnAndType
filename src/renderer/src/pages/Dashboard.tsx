@@ -7,6 +7,7 @@ import { startOfWeek, weeklyReport } from '@/core/weekly'
 import { addDays, dayKey } from '@/core/stats'
 import { setMeta } from '@/db/repo'
 import { GoalCard } from '@/components/GoalCard'
+import { ExamPlanCard } from '@/components/ExamPlanCard'
 import { LevelBar } from '@/components/LevelBar'
 import { useGamification } from '@/hooks/useGamification'
 import { WeeklySummary, weekRange } from '@/components/WeeklySummary'
@@ -97,6 +98,10 @@ export default function Dashboard(): ReactNode {
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <GoalCard sessions={sessions} now={now} />
         {game && <LevelBar xp={game.xp} level={game.level} compact />}
+      </div>
+
+      <div className="mb-4 empty:hidden">
+        <ExamPlanCard compact />
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -1,13 +1,26 @@
 export type WordStatus = 'new' | 'learning' | 'mastered'
 
 /** Cách hiển thị/gõ của từng lượt (mỗi lượt = 1 từ). */
-export type PracticeMode = 'copy' | 'recall' | 'listen' | 'cloze'
+export type PracticeMode = 'copy' | 'recall' | 'listen' | 'cloze' | 'choice' | 'family' | 'synonym' | 'collocation'
 
 /** Thuật toán lặp lại ngắt quãng. */
 export type SrsAlgorithm = 'fsrs' | 'leitner'
 
 /** Loại phiên luyện tập. */
-export type SessionKind = 'lesson' | 'copy' | 'recall' | 'listen' | 'cloze' | 'review' | 'retry' | 'game'
+export type SessionKind =
+  | 'lesson'
+  | 'copy'
+  | 'recall'
+  | 'listen'
+  | 'cloze'
+  | 'choice'
+  | 'drill'
+  | 'review'
+  | 'retry'
+  | 'game'
+
+/** Cấp độ CEFR của từ (theo Oxford 3000/5000, English Vocabulary Profile…). */
+export type Cefr = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
 
 export interface Topic {
   id: string
@@ -16,6 +29,8 @@ export interface Topic {
   emoji: string
   description?: string
   isBuiltIn: boolean
+  /** Thuộc gói luyện thi nào (VD "toeic"). Chủ đề của gói là chỉ đọc như chủ đề có sẵn. */
+  packId?: string
   order: number
   createdAt: number
 }
@@ -34,6 +49,15 @@ export interface Word {
   exampleVi: string
   isBuiltIn: boolean
   createdAt: number
+  /* ---- Thông tin luyện thi (tùy chọn) ---- */
+  packId?: string
+  /** Nhãn nguồn / nhóm, VD "toeic", "awl-3", "barrons-600:lesson-12". */
+  tags?: string[]
+  cefr?: Cefr
+  synonyms?: string[]
+  collocations?: string[]
+  /** Họ từ, VD decide → decision, decisive, decisively. */
+  family?: string[]
 }
 
 export interface StoredImage {

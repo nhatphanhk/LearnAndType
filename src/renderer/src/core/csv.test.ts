@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseWordsCsv, wordsToCsv } from './csv'
+import { parseClassificationCsv, parseWordsCsv, wordsToCsv } from './csv'
 import type { Word } from '@/types'
 
 describe('parseWordsCsv', () => {
@@ -69,5 +69,21 @@ describe('wordsToCsv', () => {
       example: 'An apple a day, they say.',
       exampleVi: 'Mỗi ngày một quả táo.'
     })
+  })
+})
+
+describe('parseClassificationCsv', () => {
+  it('đọc word/topic/cefr, chịu BOM, tên cột tiếng Việt, chữ hoa và dấu phẩy trong ô', () => {
+    const m = parseClassificationCsv(
+      '﻿Từ,Chủ đề,Cấp độ\nEliminate,IELTS · Động từ học thuật,b2\n"cost, benefit","Kinh doanh & tài chính",XX\n,Thiếu từ,\nthiếu chủ đề,,\n'
+    )
+    expect(m.size).toBe(2)
+    expect(m.get('eliminate')).toEqual({ topic: 'IELTS · Động từ học thuật', cefr: 'B2' })
+    expect(m.get('cost, benefit')).toEqual({ topic: 'Kinh doanh & tài chính' })
+  })
+
+  it('thiếu cột bắt buộc → rỗng', () => {
+    expect(parseClassificationCsv('word,meaning\ncat,mèo').size).toBe(0)
+    expect(parseClassificationCsv('').size).toBe(0)
   })
 })

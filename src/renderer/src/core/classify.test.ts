@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { Topic, Word } from '@/types'
+import { buildExamIndex } from './examClassify'
+import { PACK_APP } from './packs'
 import {
   CATEGORIES,
   buildClassifier,
   buildTargetOptions,
   categorize,
   newTarget,
+  targetForTopicName,
   normalizeName,
   targetKey,
   topicCategory
@@ -162,5 +165,75 @@ describe('buildTargetOptions', () => {
     expect(opts.has('new:van phong')).toBe(false)
     expect(opts.get('new:rieng')?.isNew).toBe(true)
     expect([...opts.values()].filter((o) => o.isNew)).toHaveLength(1 + CATEGORIES.length)
+  })
+})
+
+describe('phân loại theo gói luyện thi', () => {
+  const exam = buildExamIndex(
+    [
+      {
+        app: PACK_APP,
+        id: 'toeic',
+        version: 1,
+        name: 'TOEIC cốt lõi',
+        nameEn: 'TOEIC',
+        emoji: '💼',
+        exam: 'toeic',
+        topics: [{ id: 'finance', name: 'Tài chính', nameEn: 'Finance', emoji: '💰', words: [{ word: 'reimburse', meaningVi: 'hoàn trả' }] }]
+      }
+    ],
+    {}
+  )
+
+  it('từ không đoán được chủ đề mẫu nhưng có trong gói → chủ đề thi thay vì dự phòng', () => {
+    const fallback = newTarget('Từ vựng khác')
+    const without = buildClassifier({ topics: [], wordsByTopic: new Map(), fallback })
+    expect(without.suggest({ word: 'reimburse', meaningVi: 'hoàn trả' }).reason).toBe('fallback')
+
+    const c = buildClassifier({ topics: [], wordsByTopic: new Map(), fallback, exam })
+    const s = c.suggest({ word: 'reimbursed', meaningVi: 'hoàn trả' })
+    expect(s.reason).toBe('exam')
+    expect(s.target).toMatchObject({ kind: 'new', name: 'TOEIC · Tài chính', emoji: '💰' })
+    // Không có trong gói → vẫn dự phòng
+    expect(c.suggest({ word: 'zzz', meaningVi: 'không rõ' }).reason).toBe('fallback')
+  })
+
+  it('đã có chủ đề cùng tên → dùng lại chủ đề đó', () => {
+    const mine = topic('t1', 'TOEIC · Tài chính')
+    const c = buildClassifier({ topics: [mine], wordsByTopic: new Map(), fallback: newTarget('Từ vựng khác'), exam })
+    expect(c.suggest({ word: 'reimburse', meaningVi: 'hoàn trả' }).target).toEqual({ kind: 'topic', topicId: 't1' })
+  })
+})
+
+describe('targetForTopicName', () => {
+  const refs = [
+    {
+      key: 'toeic/finance',
+      packId: 'toeic',
+      exam: 'toeic' as const,
+      topicId: 'pack-toeic-finance',
+      name: 'Tài chính & kế toán',
+      nameEn: 'Finance & Accounting',
+      emoji: '💰',
+      packName: 'TOEIC cốt lõi'
+    }
+  ]
+
+  it('chủ đề thi → kèm emoji, tên tiếng Anh; chủ đề mẫu → theo mẫu; tên lạ → chủ đề mới', () => {
+    expect(targetForTopicName('toeic · tài chính & kế toán', refs)).toMatchObject({
+      kind: 'new',
+      name: 'TOEIC · Tài chính & kế toán',
+      emoji: '💰',
+      nameEn: 'TOEIC · Finance & Accounting'
+    })
+    const cat = CATEGORIES[0]
+    expect(targetForTopicName(cat.name.toUpperCase(), refs)).toMatchObject({ name: cat.name, emoji: cat.emoji })
+    expect(targetForTopicName('Riêng của tôi', refs)).toEqual(newTarget('Riêng của tôi'))
+  })
+
+  it('resolve dùng lại chủ đề đã có cùng tên', () => {
+    const mine = topic('t1', 'TOEIC · Tài chính & kế toán')
+    const c = buildClassifier({ topics: [mine], wordsByTopic: new Map(), fallback: newTarget('Từ vựng khác') })
+    expect(c.resolve(targetForTopicName('TOEIC · Tài chính & kế toán', refs))).toEqual({ kind: 'topic', topicId: 't1' })
   })
 })

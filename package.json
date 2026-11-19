@@ -16,6 +16,9 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
     "build:wordnet": "node scripts/build-wordnet-topics.mjs",
+    "build:packs": "node scripts/build-exam-packs.mjs",
+    "predev": "node scripts/build-exam-packs.mjs --quiet",
+    "prebuild": "node scripts/build-exam-packs.mjs --quiet",
     "test:watch": "vitest",
     "build:win": "npm run build && electron-builder --win"
   },

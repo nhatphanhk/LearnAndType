@@ -229,6 +229,84 @@ export async function classifyWithGemini(
   return out
 }
 
+export interface AiExamGuess {
+  /** Cấp độ CEFR ước lượng (null nếu AI không trả). */
+  cefr: string | null
+  /** Khóa chủ đề thi phù hợp, null = không thuộc chủ đề thi nào. */
+  topic: string | null
+}
+
+const CEFR_ENUM = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+
+/**
+ * Ước lượng cấp độ CEFR và chủ đề luyện thi (TOEIC / IELTS) cho các từ không có trong bảng cấp độ / gói thi.
+ * Gửi lên Google: từ tiếng Anh, nghĩa tiếng Việt và danh sách tên chủ đề thi.
+ */
+export async function classifyExamWithGemini(
+  words: readonly AiWord[],
+  topics: readonly AiTopicOption[],
+  opts: GeminiOptions
+): Promise<AiExamGuess[]> {
+  if (!opts.apiKey.trim()) throw new GeminiError('no key', 'auth')
+  if (words.length === 0) return []
+  const ids = topics.map((_, i) => `t${i}`)
+  const topicList = topics.map((t, i) => `${ids[i]}: ${t.label}`).join('\n')
+  const out: AiExamGuess[] = []
+  for (let start = 0; start < words.length; start += BATCH_SIZE) {
+    const batch = words.slice(start, start + BATCH_SIZE)
+    const body = {
+      systemInstruction: {
+        parts: [
+          {
+            text:
+              'You label English vocabulary (with Vietnamese meanings) for learners preparing for TOEIC and IELTS. ' +
+              'For each word give its CEFR level (as in the Oxford 3000/5000 or English Vocabulary Profile) and the single ' +
+              `exam topic id it is most useful for. Use "${NONE}" when the word is not typical of any listed exam topic ` +
+              `(e.g. everyday words like animals or fruit). Topics:\n${topicList}`
+          }
+        ]
+      },
+      contents: [
+        { role: 'user', parts: [{ text: JSON.stringify(batch.map((w, i) => ({ i, word: w.word, meaning: w.meaningVi }))) }] }
+      ],
+      generationConfig: {
+        temperature: 0,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'ARRAY',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              i: { type: 'INTEGER' },
+              cefr: { type: 'STRING', enum: CEFR_ENUM },
+              topic: { type: 'STRING', enum: [...ids, NONE] }
+            },
+            required: ['i', 'cefr', 'topic']
+          }
+        }
+      }
+    }
+    const text = await generate(body, { ...opts, apiKey: opts.apiKey.trim() })
+    let arr: unknown
+    try {
+      arr = JSON.parse(text)
+    } catch {
+      throw new GeminiError('json', 'bad-response')
+    }
+    if (!Array.isArray(arr)) throw new GeminiError('not array', 'bad-response')
+    const res: AiExamGuess[] = batch.map(() => ({ cefr: null, topic: null }))
+    for (const item of arr as { i?: unknown; cefr?: unknown; topic?: unknown }[]) {
+      const i = typeof item?.i === 'number' ? item.i : -1
+      if (i < 0 || i >= batch.length) continue
+      const cefr = typeof item.cefr === 'string' && CEFR_ENUM.includes(item.cefr) ? item.cefr : null
+      const m = typeof item.topic === 'string' ? /^t(\d+)$/.exec(item.topic) : null
+      res[i] = { cefr, topic: m ? (topics[Number(m[1])]?.key ?? null) : null }
+    }
+    out.push(...res)
+  }
+  return out
+}
+
 /** Kiểm tra nhanh key (dùng ở Cài đặt). */
 export async function testGeminiKey(apiKey: string, fetchFn?: FetchFn): Promise<void> {
   const r = await classifyWithGemini(

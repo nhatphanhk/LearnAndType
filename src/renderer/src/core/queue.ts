@@ -1,6 +1,7 @@
 import type { PracticeMode, SessionKind, Word, WordProgress } from '@/types'
 import { isDue } from './srs'
 import { makeCloze } from './typing'
+import { canDrill } from './drill'
 
 export interface QueueItem {
   wordId: string
@@ -9,6 +10,12 @@ export interface QueueItem {
   phase: 1 | 2
   /** Số lần từ này đã được đưa lại vào hàng đợi trong phiên. */
   retry: number
+  /** Các phương án của lượt trắc nghiệm (gồm đáp án đúng). */
+  options?: string[]
+  /** Đáp án của lượt nếu khác chính từ đó (họ từ, đồng nghĩa). */
+  answer?: string
+  /** Gợi ý của lượt: loại từ cần (họ từ) hoặc cụm từ có chỗ trống (collocation). */
+  prompt?: string
 }
 
 export type Rng = () => number
@@ -83,6 +90,13 @@ export function pickWordsForKind(
       return words.filter((w) => isDue(progress.get(w.id), now))
     case 'cloze':
       return pickPracticeWords(words.filter(canCloze), progress, size)
+    case 'drill':
+      return pickPracticeWords(words.filter(canDrill), progress, size)
+    case 'choice': {
+      // Ưu tiên từ có câu ví dụ (đúng dạng Part 5); thiếu thì dùng nghĩa
+      const withSentence = words.filter(canCloze)
+      return pickPracticeWords(withSentence.length >= Math.min(size, words.length) ? withSentence : words, progress, size)
+    }
     default:
       return pickPracticeWords(words, progress, size)
   }
@@ -114,6 +128,11 @@ export function buildQueue(kind: SessionKind, words: readonly Word[], rng: Rng =
       return shuffle(words, rng).map((w) => item(w, 'listen'))
     case 'cloze':
       return shuffle(words, rng).map((w) => item(w, canCloze(w) ? 'cloze' : 'recall'))
+    case 'choice':
+      return shuffle(words, rng).map((w) => item(w, 'choice'))
+    case 'drill':
+      // Cần kho phương án nhiễu → dựng bởi buildDrillQueue (core/drill.ts) trong store
+      return []
     case 'review':
       return shuffle(words, rng).map((w, i) => item(w, reviewMode(w, i)))
   }

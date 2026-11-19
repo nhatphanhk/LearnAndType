@@ -1,0 +1,29 @@
+{
+  "id": "ielts",
+  "version": 1,
+  "name": "IELTS học thuật",
+  "nameEn": "IELTS Academic",
+  "emoji": "🎓",
+  "description": "Từ vựng học thuật cho IELTS Reading, Writing Task 1 & 2 và Speaking, chia theo chủ đề đề thi hay gặp.",
+  "exam": "ielts",
+  "sources": ["LearnAndType (tự soạn)"],
+  "topics": [
+    { "id": "academic", "name": "Động từ học thuật", "nameEn": "Academic Verbs", "emoji": "🧠" },
+    { "id": "academic-nouns", "name": "Danh từ & tính từ học thuật", "nameEn": "Academic Nouns & Adjectives", "emoji": "📖" },
+    { "id": "trends", "name": "Mô tả số liệu (Task 1)", "nameEn": "Describing Data", "emoji": "📈" },
+    { "id": "environment", "name": "Môi trường", "nameEn": "Environment", "emoji": "🌍" },
+    { "id": "education", "name": "Giáo dục", "nameEn": "Education", "emoji": "🏫" },
+    { "id": "technology", "name": "Công nghệ", "nameEn": "Technology", "emoji": "🤖" },
+    { "id": "health", "name": "Sức khỏe", "nameEn": "Health", "emoji": "💪" },
+    { "id": "society", "name": "Xã hội & gia đình", "nameEn": "Society & Family", "emoji": "👨‍👩‍👧" },
+    { "id": "economy", "name": "Kinh tế & việc làm", "nameEn": "Economy & Work", "emoji": "💹" },
+    { "id": "government", "name": "Chính phủ & pháp luật", "nameEn": "Government & Law", "emoji": "⚖️" },
+    { "id": "urban", "name": "Đô thị & giao thông", "nameEn": "Cities & Transport", "emoji": "🏙️" },
+    { "id": "media", "name": "Truyền thông & quảng cáo", "nameEn": "Media & Advertising", "emoji": "📺" },
+    { "id": "culture", "name": "Văn hóa & du lịch", "nameEn": "Culture & Tourism", "emoji": "🎭" },
+    { "id": "science", "name": "Khoa học & nghiên cứu", "nameEn": "Science & Research", "emoji": "🔬" },
+    { "id": "opinion", "name": "Lập luận & quan điểm (Task 2)", "nameEn": "Argument & Opinion", "emoji": "💬" },
+    { "id": "awl", "name": "Từ học thuật AWL mở rộng", "nameEn": "Academic Word List+", "emoji": "📚" },
+    { "id": "speaking", "name": "Diễn đạt tự nhiên (Speaking)", "nameEn": "Natural Expressions", "emoji": "🎤" }
+  ]
+}

@@ -204,6 +204,8 @@ export function mistakeReport(
   for (const a of attempts) {
     for (const k of a.wrongKeys ?? []) keys.set(k, (keys.get(k) ?? 0) + 1)
     if (a.correct || a.answer === undefined) continue
+    // Họ từ / đồng nghĩa: đáp án không phải chính từ đó nên không so lỗi chính tả được
+    if (a.mode === 'family' || a.mode === 'synonym') continue
     const target = targetOf(a.wordId)
     if (target === undefined) continue
     total++

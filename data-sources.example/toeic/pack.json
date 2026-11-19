@@ -1,0 +1,14 @@
+{
+  "id": "toeic",
+  "version": 1,
+  "name": "TOEIC cốt lõi",
+  "nameEn": "TOEIC Core",
+  "emoji": "💼",
+  "description": "Từ vựng công sở, kinh doanh thường gặp trong đề TOEIC.",
+  "exam": "toeic",
+  "sources": ["Mẫu"],
+  "topics": [
+    { "id": "office", "name": "Văn phòng", "nameEn": "Office", "emoji": "🏢" },
+    { "id": "finance", "name": "Tài chính", "nameEn": "Finance", "emoji": "💰" }
+  ]
+}

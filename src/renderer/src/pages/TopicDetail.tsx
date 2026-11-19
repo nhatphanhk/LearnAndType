@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { canCloze, pickWordsForKind } from '@/core/queue'
+import { canDrill } from '@/core/drill'
 import { isDue } from '@/core/srs'
 import { topicProgress } from '@/core/stats'
 import { useNow, useProgressMap, useTopic, useWords } from '@/hooks/useData'
@@ -11,6 +12,7 @@ import { TopicIcon } from '@/components/TopicIcon'
 import { Badge, Button, Card, EmptyState, ProgressBar, StatTile, cx } from '@/components/ui'
 import { KIND_INFO, formatDue, posLabel, statusBadge } from '@/labels'
 import { launchSession } from '@/launch'
+import { db } from '@/db/schema'
 import type { SessionKind } from '@/types'
 
 type Filter = 'all' | 'new' | 'learning' | 'mastered' | 'due'
@@ -50,9 +52,18 @@ export default function TopicDetail(): ReactNode {
   const learnedWords = words.filter((w) => (progress.get(w.id)?.box ?? 0) > 0)
   const dueWords = words.filter((w) => isDue(progress.get(w.id), now))
   const clozeCount = words.filter(canCloze).length
+  const drillCount = words.filter(canDrill).length
 
-  const start = (kind: SessionKind): void => {
-    void launchSession(navigate, kind, topic.id, pickWordsForKind(kind, words, progress, lessonSize, now))
+  const start = async (kind: SessionKind): Promise<void> => {
+    const picked = pickWordsForKind(kind, words, progress, lessonSize, now)
+    // Trắc nghiệm cần đủ phương án nhiễu: chủ đề ít từ thì lấy thêm từ cả gói / cả kho
+    const pool =
+      (kind === 'choice' || kind === 'drill') && words.length < 12
+        ? topic.packId
+          ? await db.words.where('packId').equals(topic.packId).toArray()
+          : await db.words.toArray()
+        : words
+    void launchSession(navigate, kind, topic.id, picked, { pool })
   }
 
   const modes: { kind: SessionKind; note: string; disabled?: boolean }[] = [
@@ -73,6 +84,14 @@ export default function TopicDetail(): ReactNode {
       note: clozeCount ? `${Math.min(lessonSize, clozeCount)} câu` : 'Cần từ có câu ví dụ',
       disabled: clozeCount === 0
     },
+    {
+      kind: 'choice',
+      note: clozeCount ? `${Math.min(lessonSize, words.length)} câu, 4 đáp án` : `${Math.min(lessonSize, words.length)} từ, chọn theo nghĩa`,
+      disabled: words.length < 2
+    },
+    ...(drillCount > 0
+      ? [{ kind: 'drill' as const, note: `${Math.min(lessonSize, drillCount)} từ · họ từ, đồng nghĩa, collocation` }]
+      : []),
     { kind: 'review', note: dueWords.length ? `${dueWords.length} từ đến hạn` : 'Chưa có từ đến hạn', disabled: dueWords.length === 0 }
   ]
 
@@ -102,8 +121,8 @@ export default function TopicDetail(): ReactNode {
 
   return (
     <div>
-      <Link to="/topics" className="text-sm text-slate-500 hover:text-indigo-600">
-        ← Tất cả chủ đề
+      <Link to={topic.packId ? '/packs' : '/topics'} className="text-sm text-slate-500 hover:text-indigo-600">
+        {topic.packId ? '← Luyện thi' : '← Tất cả chủ đề'}
       </Link>
       <div className="mt-3 mb-6 flex flex-wrap items-center gap-5">
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 text-5xl dark:bg-indigo-950">
@@ -206,7 +225,10 @@ export default function TopicDetail(): ReactNode {
                 <li key={w.id} className="flex items-center gap-4 px-5 py-3">
                   <WordImage word={w} size="sm" />
                   <div className="w-48 min-w-0">
-                    <div className="truncate font-semibold">{w.word}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate font-semibold">{w.word}</span>
+                      {w.cefr && <Badge tone="indigo">{w.cefr}</Badge>}
+                    </div>
                     <div className="truncate text-sm text-slate-500">
                       {w.ipa} {w.partOfSpeech && <i>· {posLabel(w.partOfSpeech)}</i>}
                     </div>
@@ -214,6 +236,17 @@ export default function TopicDetail(): ReactNode {
                   <div className="min-w-0 flex-1">
                     <div className="truncate">{w.meaningVi}</div>
                     {w.example && <div className="truncate text-sm text-slate-500">{w.example}</div>}
+                    {!!(w.synonyms?.length || w.collocations?.length || w.family?.length) && (
+                      <div className="truncate text-xs text-slate-500">
+                        {[
+                          w.synonyms?.length && `≈ ${w.synonyms.join(', ')}`,
+                          w.collocations?.length && `🔗 ${w.collocations.join(' · ')}`,
+                          w.family?.length && `👪 ${w.family.join(', ')}`
+                        ]
+                          .filter(Boolean)
+                          .join('   ')}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <Badge tone={b.tone}>{b.text}</Badge>

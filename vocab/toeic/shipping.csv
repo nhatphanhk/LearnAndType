@@ -1,0 +1,35 @@
+word,meaning,ipa,pos,cefr,example,exampleVi,synonyms,collocations,family
+shipment,lô hàng,/ˈʃɪpmənt/,n,B2,"The shipment will arrive on Tuesday.","Lô hàng sẽ đến vào thứ Ba.",consignment;delivery,track a shipment;delay a shipment,ship (v);shipping (n)
+ship,vận chuyển / gửi hàng,/ʃɪp/,v,B1,"We ship orders within 24 hours.","Chúng tôi gửi đơn hàng trong vòng 24 giờ.",send;dispatch,ship overseas;ship an order,shipment (n);shipping (n)
+deliver,giao hàng,/dɪˈlɪvə(r)/,v,A2,"The package was delivered to the wrong address.","Gói hàng đã được giao nhầm địa chỉ.",bring;transport,deliver goods;deliver on time,delivery (n)
+delivery,sự giao hàng,/dɪˈlɪvəri/,n,B1,"Free delivery is available for orders over $50.","Miễn phí giao hàng cho đơn trên 50 đô la.",shipment;distribution,free delivery;delivery date;express delivery,deliver (v)
+dispatch,gửi đi,/dɪˈspætʃ/,v,C1,"Your order was dispatched this morning.","Đơn hàng của bạn đã được gửi đi sáng nay.",send;ship,dispatch goods,dispatch (n)
+courier,dịch vụ chuyển phát,/ˈkʊriə(r)/,n,B2,"The documents were sent by courier.","Tài liệu được gửi bằng chuyển phát nhanh.",messenger;delivery service,send by courier;courier service,
+package,gói hàng,/ˈpækɪdʒ/,n,A2,"A package arrived for you this afternoon.","Chiều nay có một gói hàng gửi cho bạn.",parcel;box,send a package;receive a package,pack (v);packaging (n)
+parcel,bưu kiện,/ˈpɑːsl/,n,B1,"Please sign for this parcel.","Vui lòng ký nhận bưu kiện này.",package;packet,send a parcel;parcel delivery,
+packaging,bao bì,/ˈpækɪdʒɪŋ/,n,B2,"We use recyclable packaging.","Chúng tôi dùng bao bì có thể tái chế.",wrapping;container,product packaging,package (n);pack (v)
+fragile,dễ vỡ,/ˈfrædʒaɪl/,adj,C1,"Handle this box carefully; it is fragile.","Hãy cầm hộp này cẩn thận; nó dễ vỡ.",delicate;breakable,fragile item;handle with care,fragility (n)
+warehouse,nhà kho,/ˈweəhaʊs/,n,B2,"The goods are stored in our warehouse.","Hàng hóa được cất trong kho của chúng tôi.",storehouse;depot,warehouse manager;warehouse space,
+storage,sự lưu trữ,/ˈstɔːrɪdʒ/,n,B2,"We need more storage space.","Chúng tôi cần thêm chỗ lưu trữ.",keeping;space,storage room;cold storage,store (v)
+freight,hàng hóa vận chuyển / cước,/freɪt/,n,C1,"Freight costs have risen sharply.","Cước vận chuyển đã tăng mạnh.",cargo;goods,air freight;freight charges,
+cargo,hàng hóa (trên tàu/máy bay),/ˈkɑːɡəʊ/,n,B2,"The ship was carrying cargo to Singapore.","Con tàu chở hàng đến Singapore.",freight;load,cargo ship;load cargo,
+logistics,hậu cần,/ləˈdʒɪstɪks/,n,C1,"Our logistics team manages all deliveries.","Đội hậu cần của chúng tôi quản lý mọi việc giao hàng.",supply chain;operations,logistics company,logistical (adj)
+track,theo dõi,/træk/,v,B2,"You can track your order online.","Bạn có thể theo dõi đơn hàng trực tuyến.",trace;follow,track an order;tracking number,tracking (n)
+tracking number,mã vận đơn,/ˈtrækɪŋ ˌnʌmbə(r)/,n,B2,"Your tracking number is in the confirmation email.","Mã vận đơn có trong email xác nhận.",reference number,,
+destination,điểm đến,/ˌdestɪˈneɪʃn/,n,B1,"The parcel has reached its destination.","Bưu kiện đã đến nơi.",end point,final destination;travel destination,
+route,tuyến đường,/ruːt/,n,B1,"The driver took a shorter route.","Tài xế đã đi tuyến đường ngắn hơn.",path;way,delivery route;bus route,route (v)
+transit,quá trình vận chuyển,/ˈtrænzɪt/,n,C1,"The goods were damaged in transit.","Hàng hóa bị hư hại trong quá trình vận chuyển.",transport;transfer,in transit;public transit,
+customs,hải quan,/ˈkʌstəmz/,n,B2,"The package is being held at customs.","Gói hàng đang bị giữ ở hải quan.",border control,customs declaration;go through customs,
+import,nhập khẩu,/ɪmˈpɔːt/,v,B1,"The company imports coffee from Brazil.","Công ty nhập khẩu cà phê từ Brazil.",bring in,import goods;import duties,import (n);importer (n)
+export,xuất khẩu,/ɪkˈspɔːt/,v,B1,"Vietnam exports rice to many countries.","Việt Nam xuất khẩu gạo sang nhiều nước.",sell abroad;ship,export goods;export market,export (n);exporter (n)
+load,chất hàng,/ləʊd/,v,B1,"Workers are loading boxes onto the truck.","Công nhân đang chất hộp lên xe tải.",pack;fill,load a truck;loading dock,load (n)
+unload,dỡ hàng,/ʌnˈləʊd/,v,B2,"They unloaded the containers at the port.","Họ dỡ các container ở cảng.",discharge;empty,unload goods,
+forklift,xe nâng,/ˈfɔːklɪft/,n,C1,"Only trained staff may operate the forklift.","Chỉ nhân viên được đào tạo mới được lái xe nâng.",lift truck,operate a forklift,
+pallet,pallet (tấm kê hàng),/ˈpælət/,n,C1,"The boxes are stacked on pallets.","Các hộp được xếp chồng trên pallet.",platform,wooden pallet,
+container,thùng chứa / container,/kənˈteɪnə(r)/,n,B1,"Each container holds 500 units.","Mỗi container chứa 500 sản phẩm.",box;crate,shipping container,contain (v)
+estimated,ước tính,/ˈestɪmeɪtɪd/,adj,B2,"The estimated delivery time is three days.","Thời gian giao hàng ước tính là ba ngày.",approximate;projected,estimated arrival;estimated cost,estimate (v);estimation (n)
+expedite,xúc tiến / đẩy nhanh,/ˈekspədaɪt/,v,C1,"We can expedite your order for an extra fee.","Chúng tôi có thể giao đơn hàng nhanh hơn với phụ phí.",speed up;accelerate,expedite delivery,expedited (adj)
+delay,sự chậm trễ / trì hoãn,/dɪˈleɪ/,n,B1,"We apologize for the delay in shipping.","Chúng tôi xin lỗi vì sự chậm trễ giao hàng.",postponement;hold-up,cause a delay;without delay,delay (v)
+carrier,hãng vận chuyển,/ˈkæriə(r)/,n,C1,"We use several carriers for international orders.","Chúng tôi dùng nhiều hãng vận chuyển cho đơn quốc tế.",shipper;transporter,shipping carrier,carry (v)
+distribution,sự phân phối,/ˌdɪstrɪˈbjuːʃn/,n,B2,"The new distribution center opens in May.","Trung tâm phân phối mới khai trương vào tháng Năm.",supply;delivery,distribution center;distribution network,distribute (v);distributor (n)
+distributor,nhà phân phối,/dɪˈstrɪbjətə(r)/,n,C1,"We are the sole distributor in Vietnam.","Chúng tôi là nhà phân phối độc quyền tại Việt Nam.",supplier;dealer,exclusive distributor,distribute (v);distribution (n)

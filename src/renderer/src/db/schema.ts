@@ -21,6 +21,11 @@ export class LearnDB extends Dexie {
       attempts: '++id, sessionId, wordId, at',
       meta: 'key'
     })
+    // v2: gói luyện thi (TOEIC / IELTS) + nhãn, cấp độ CEFR
+    this.version(2).stores({
+      topics: 'id, order, packId',
+      words: 'id, topicId, word, packId, *tags, cefr'
+    })
   }
 }
 

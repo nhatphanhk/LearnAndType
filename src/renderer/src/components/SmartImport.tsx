@@ -21,6 +21,8 @@ import { pickFile } from '@/download'
 import type { Topic, Word } from '@/types'
 import { GeminiError, classifyWithGemini, geminiErrorMessage } from '@/core/gemini'
 import { loadWordnetTopics, type WordnetTopics } from '@/core/wordnet'
+import { loadExamIndex } from '@/data/examIndex'
+import type { ExamIndex } from '@/core/examClassify'
 import { useSettings } from '@/store/settingsStore'
 import { toast } from './Toast'
 import { Badge, Button, Field, cx, inputCls } from './ui'
@@ -201,19 +203,21 @@ export function SmartImport({
   // Bảng chủ đề WordNet (offline, ~1 MB) — tải khi mở hộp nhập; chưa tải xong thì phân loại như cũ
   const [wordnet, setWordnet] = useState<WordnetTopics | undefined>()
   const [wordnetDone, setWordnetDone] = useState(false)
+  // Bảng từ của gói TOEIC / IELTS: từ không đoán được chủ đề mẫu → xếp vào chủ đề thi thay vì "Từ vựng khác"
+  const [exam, setExam] = useState<ExamIndex | undefined>()
   useEffect(() => {
     let alive = true
-    loadWordnetTopics()
-      .then((m) => alive && setWordnet(m))
-      .catch(() => undefined)
-      .finally(() => alive && setWordnetDone(true))
+    void Promise.allSettled([
+      loadWordnetTopics().then((m) => alive && setWordnet(m)),
+      loadExamIndex().then((m) => alive && setExam(m))
+    ]).finally(() => alive && setWordnetDone(true))
     return () => {
       alive = false
     }
   }, [])
   const classifier = useMemo(
-    () => buildClassifier({ topics: customTopics, wordsByTopic, fallback: fallbackTarget, wordnet }),
-    [customTopics, wordsByTopic, fallbackTarget, wordnet]
+    () => buildClassifier({ topics: customTopics, wordsByTopic, fallback: fallbackTarget, wordnet, exam }),
+    [customTopics, wordsByTopic, fallbackTarget, wordnet, exam]
   )
   const fallbackResolved = useMemo(() => classifier.resolve(fallbackTarget), [classifier, fallbackTarget])
   const fallbackKey = targetKey(fallbackResolved)

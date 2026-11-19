@@ -157,7 +157,8 @@ export function gradeFor(input: ReviewInput): Grade {
   const len = Math.max(1, input.answerLength ?? 5)
   const ms = input.durationMs
   if (ms !== undefined && ms > slowThresholdMs(len)) return Rating.Hard
-  if (ms !== undefined && ms < fastThresholdMs(len)) return Rating.Easy
+  // Trắc nghiệm chỉ là nhận diện (dễ hơn tự nhớ) → tối đa Good
+  if (ms !== undefined && ms < fastThresholdMs(len)) return input.mode === 'choice' || input.mode === 'synonym' ? Rating.Good : Rating.Easy
   return Rating.Good
 }
 

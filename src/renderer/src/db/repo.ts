@@ -3,7 +3,19 @@ import { builtinEntities, BUILTIN_VERSION } from '@/data/builtin'
 import { applyReview, newProgress, type ReviewResult } from '@/core/srs'
 import type { CsvWord } from '@/core/csv'
 import { normalizeName, type Target } from '@/core/classify'
-import type { Attempt, PracticeMode, Session, SessionKind, SrsAlgorithm, StoredImage, Topic, Word, WordProgress } from '@/types'
+import { isPackFile, packEntities, type PackExam, type PackFile } from '@/core/packs'
+import type {
+  Attempt,
+  Cefr,
+  PracticeMode,
+  Session,
+  SessionKind,
+  SrsAlgorithm,
+  StoredImage,
+  Topic,
+  Word,
+  WordProgress
+} from '@/types'
 
 const uid = (): string => crypto.randomUUID()
 
@@ -15,7 +27,8 @@ export async function ensureSeed(now = Date.now()): Promise<void> {
   const { topics, words } = builtinEntities(now)
   await db.transaction('rw', [db.topics, db.words, db.progress, db.meta], async () => {
     const keepIds = new Set(words.map((w) => w.id))
-    const oldBuiltin = await db.words.filter((w) => w.isBuiltIn).primaryKeys()
+    // Từ của gói luyện thi cũng là chỉ đọc nhưng do installPack quản lý
+    const oldBuiltin = await db.words.filter((w) => w.isBuiltIn && !w.packId).primaryKeys()
     const removed = oldBuiltin.filter((id) => !keepIds.has(id))
     if (removed.length) {
       await db.words.bulkDelete(removed)
@@ -24,8 +37,124 @@ export async function ensureSeed(now = Date.now()): Promise<void> {
     // Giữ createdAt cũ để thứ tự ổn định
     const existing = new Map((await db.words.bulkGet(words.map((w) => w.id))).flatMap((w) => (w ? [[w.id, w]] : [])))
     await db.topics.bulkPut(topics)
-    await db.words.bulkPut(words.map((w) => ({ ...w, createdAt: existing.get(w.id)?.createdAt ?? w.createdAt })))
+    // Giữ createdAt và nhãn luyện thi (CEFR / TOEIC / IELTS) đã gắn bằng "Phân loại từ đang có"
+    await db.words.bulkPut(
+      words.map((w) => {
+        const old = existing.get(w.id)
+        return {
+          ...w,
+          createdAt: old?.createdAt ?? w.createdAt,
+          ...(old?.cefr ? { cefr: old.cefr } : {}),
+          ...(old?.tags?.length ? { tags: old.tags } : {})
+        }
+      })
+    )
     await db.meta.put({ key: 'seedVersion', value: BUILTIN_VERSION })
+  })
+}
+
+/* ------------------------------- Gói luyện thi ------------------------------- */
+
+export interface InstalledPack {
+  version: number
+  build?: number
+  installedAt: number
+  name: string
+  emoji: string
+  exam?: PackExam
+}
+
+export const PACKS_META_KEY = 'packs'
+
+export async function installedPacks(): Promise<Record<string, InstalledPack>> {
+  return getMeta<Record<string, InstalledPack>>(PACKS_META_KEY, {})
+}
+
+export interface PackInstallResult {
+  topics: number
+  words: number
+  /** Từ có trong lần cài trước nhưng đã bị bỏ khỏi gói (xóa cùng tiến độ). */
+  removed: number
+  skipped: number
+}
+
+/**
+ * Cài hoặc cập nhật một gói. Id từ ổn định (`pack-<id>:<slug>`) nên cài lại / cập nhật
+ * giữ nguyên tiến độ của từ còn trong gói; từ không còn trong gói bị xóa.
+ */
+export async function installPack(pack: PackFile, now = Date.now()): Promise<PackInstallResult> {
+  if (!isPackFile(pack)) throw new Error('File gói không hợp lệ.')
+  return db.transaction('rw', [db.topics, db.words, db.progress, db.meta], async () => {
+    const installed = await installedPacks()
+    const ids = Object.keys(installed)
+    const index = ids.includes(pack.id) ? ids.indexOf(pack.id) : ids.length
+    const { topics, words, skipped } = packEntities(pack, index, now)
+    if (words.length === 0) throw new Error('Gói không có từ nào hợp lệ (thiếu từ hoặc nghĩa).')
+
+    const keepWords = new Set(words.map((w) => w.id))
+    const oldWords = await db.words.where('packId').equals(pack.id).primaryKeys()
+    const removed = oldWords.filter((id) => !keepWords.has(id))
+    await db.words.bulkDelete(removed)
+    await db.progress.bulkDelete(removed)
+    const keepTopics = new Set(topics.map((t) => t.id))
+    const oldTopics = await db.topics.where('packId').equals(pack.id).primaryKeys()
+    await db.topics.bulkDelete(oldTopics.filter((id) => !keepTopics.has(id)))
+
+    // Giữ createdAt cũ (thứ tự học ổn định); tiến độ đi theo id nhưng cần cập nhật topicId nếu từ đổi chủ đề
+    const existing = new Map((await db.words.bulkGet(words.map((w) => w.id))).flatMap((w) => (w ? [[w.id, w]] : [])))
+    await db.topics.bulkPut(topics)
+    await db.words.bulkPut(words.map((w) => ({ ...w, createdAt: existing.get(w.id)?.createdAt ?? w.createdAt })))
+    const moved = words.filter((w) => existing.has(w.id) && existing.get(w.id)!.topicId !== w.topicId)
+    for (const w of moved) await db.progress.update(w.id, { topicId: w.topicId })
+
+    installed[pack.id] = {
+      version: pack.version,
+      ...(pack.build !== undefined ? { build: pack.build } : {}),
+      installedAt: now,
+      name: pack.name,
+      emoji: pack.emoji,
+      ...(pack.exam ? { exam: pack.exam } : {})
+    }
+    await db.meta.put({ key: PACKS_META_KEY, value: installed })
+    return { topics: topics.length, words: words.length, removed: removed.length, skipped }
+  })
+}
+
+/** Gỡ gói: xóa chủ đề, từ và tiến độ của gói (lịch sử lượt gõ giữ nguyên). */
+export async function uninstallPack(packId: string): Promise<void> {
+  await db.transaction('rw', [db.topics, db.words, db.progress, db.meta], async () => {
+    const wordIds = await db.words.where('packId').equals(packId).primaryKeys()
+    await db.progress.bulkDelete(wordIds)
+    await db.words.bulkDelete(wordIds)
+    await db.topics.where('packId').equals(packId).delete()
+    const installed = await installedPacks()
+    delete installed[packId]
+    await db.meta.put({ key: PACKS_META_KEY, value: installed })
+  })
+}
+
+/**
+ * Lưu nhãn luyện thi (CEFR, tags) cho từ đang có — kể cả từ có sẵn (chỉ đọc về nội dung,
+ * nhưng nhãn được giữ qua ensureSeed). Không đụng từ của gói thi. Trả về số từ đã cập nhật.
+ */
+export async function saveWordLabels(updates: readonly { id: string; cefr?: Cefr; tags?: string[] }[]): Promise<number> {
+  return db.transaction('rw', [db.words], async () => {
+    let n = 0
+    for (const u of updates) {
+      const w = await db.words.get(u.id)
+      if (!w || w.packId) continue
+      const patch: Partial<Word> = {}
+      if (u.cefr && u.cefr !== w.cefr) patch.cefr = u.cefr
+      if (u.tags) {
+        const tags = [...new Set([...(w.tags ?? []), ...u.tags])]
+        if (tags.length !== (w.tags?.length ?? 0)) patch.tags = tags
+      }
+      if (Object.keys(patch).length) {
+        await db.words.update(u.id, patch)
+        n++
+      }
+    }
+    return n
   })
 }
 
