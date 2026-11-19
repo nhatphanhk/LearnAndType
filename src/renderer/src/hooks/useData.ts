@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/db/schema'
-import type { Session, Topic, Word, WordProgress } from '@/types'
+import type { Attempt, Session, Topic, Word, WordProgress } from '@/types'
 
 export function useTopics(): Topic[] | undefined {
   return useLiveQuery(() => db.topics.orderBy('order').toArray(), [])
@@ -45,4 +45,17 @@ export function groupByTopic(words: readonly Word[]): Map<string, Word[]> {
     else m.set(w.topicId, [w])
   }
   return m
+}
+
+/** Các lượt gõ từ thời điểm `since` (ms) trở đi. */
+export function useAttemptsSince(since: number): Attempt[] | undefined {
+  return useLiveQuery(() => db.attempts.where('at').aboveOrEqual(since).toArray(), [since])
+}
+
+/** Giá trị trong bảng meta (cập nhật trực tiếp). `undefined` khi đang tải. */
+export function useMeta<T>(key: string, fallback: T): T | undefined {
+  return useLiveQuery(async () => {
+    const row = await db.meta.get(key)
+    return row === undefined ? fallback : (row.value as T)
+  }, [key])
 }

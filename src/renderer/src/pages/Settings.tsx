@@ -82,6 +82,94 @@ function AiSettings(): ReactNode {
   )
 }
 
+function GoalSettings(): ReactNode {
+  const s = useSettings()
+  const numberInput = (value: number, onChange: (v: number) => void, max: number, label: string): ReactNode => (
+    <input
+      type="number"
+      min={0}
+      max={max}
+      value={value}
+      aria-label={label}
+      onChange={(e) => onChange(Math.max(0, Math.min(max, Math.round(Number(e.target.value) || 0))))}
+      className={cx(inputCls, 'w-24 text-right tabular-nums')}
+    />
+  )
+  const testNotification = (): void => {
+    if (typeof Notification === 'undefined') {
+      toast.error('Hệ thống không hỗ trợ thông báo.')
+      return
+    }
+    const n = new Notification('LearnAndType: tới giờ học rồi! ⌨️', { body: 'Đây là thông báo thử.' })
+    n.onclick = () => void window.api?.focus()
+  }
+  const isDesktop = !!window.api
+
+  return (
+    <Card className="mt-6">
+      <h2 className="font-semibold">🎯 Mục tiêu & nhắc học</h2>
+      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="flex items-center justify-between gap-4 py-3">
+          <span>
+            <span className="block font-medium">Số lượt gõ mỗi ngày</span>
+            <span className="block text-sm text-slate-500">Mỗi từ gõ trong một phiên tính là 1 lượt. 0 = không đặt.</span>
+          </span>
+          {numberInput(s.dailyGoalWords, (v) => s.set({ dailyGoalWords: v }), 500, 'Số lượt gõ mỗi ngày')}
+        </div>
+        <div className="flex items-center justify-between gap-4 py-3">
+          <span>
+            <span className="block font-medium">Số phút gõ mỗi ngày</span>
+            <span className="block text-sm text-slate-500">Chỉ tính thời gian đang gõ. 0 = không đặt.</span>
+          </span>
+          {numberInput(s.dailyGoalMinutes, (v) => s.set({ dailyGoalMinutes: v }), 240, 'Số phút gõ mỗi ngày')}
+        </div>
+        <Toggle
+          checked={s.reminderEnabled}
+          onChange={(v) => s.set({ reminderEnabled: v })}
+          label="Nhắc học hằng ngày"
+          description="Gửi thông báo Windows một lần mỗi ngày nếu tới giờ mà chưa đạt mục tiêu. App cần đang chạy (có thể ẩn dưới khay)."
+        />
+        {s.reminderEnabled && (
+          <div className="flex items-center justify-between gap-4 py-3">
+            <span className="font-medium">Giờ nhắc</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="time"
+                value={s.reminderTime}
+                onChange={(e) => e.target.value && s.set({ reminderTime: e.target.value })}
+                className={cx(inputCls, 'w-32')}
+                aria-label="Giờ nhắc"
+              />
+              <Button onClick={testNotification}>Gửi thử</Button>
+            </div>
+          </div>
+        )}
+        {isDesktop && (
+          <>
+            <Toggle
+              checked={s.closeToTray}
+              onChange={(v) => s.set({ closeToTray: v })}
+              label="Thu xuống khay khi đóng cửa sổ"
+              description="App tiếp tục chạy ẩn để nhắc học. Thoát hẳn bằng menu của biểu tượng dưới khay."
+            />
+            <Toggle
+              checked={s.launchAtLogin}
+              onChange={(v) => {
+                s.set({ launchAtLogin: v, ...(v ? { closeToTray: true } : {}) })
+                void window.api?.setLaunchAtLogin(v).then((ok) => {
+                  if (v && !ok) toast.info('Chỉ có tác dụng ở bản đã cài đặt (không áp dụng khi chạy dev).')
+                })
+              }}
+              label="Khởi động cùng Windows"
+              description="Chạy ẩn dưới khay khi đăng nhập để không bỏ lỡ giờ nhắc."
+            />
+          </>
+        )}
+      </div>
+    </Card>
+  )
+}
+
 export default function SettingsPage(): ReactNode {
   const s = useSettings()
   const voices = useEnglishVoices()
@@ -195,6 +283,8 @@ export default function SettingsPage(): ReactNode {
           />
         </div>
       </Card>
+
+      <GoalSettings />
 
       <Card className="mt-6">
         <h2 className="font-semibold">Phát âm</h2>

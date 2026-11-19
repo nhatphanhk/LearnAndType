@@ -6,6 +6,7 @@ import { ensureSeed } from './db/repo'
 import { useSettings } from './store/settingsStore'
 import { useNow } from './hooks/useData'
 import { Toaster } from './components/Toast'
+import { useDesktopBridge, useReminder } from './hooks/useReminder'
 import { cx } from './components/ui'
 import Dashboard from './pages/Dashboard'
 import Topics from './pages/Topics'
@@ -90,6 +91,13 @@ function Sidebar(): ReactNode {
   )
 }
 
+/** Nhắc học + cầu nối với main process (cần nằm trong Router để chuyển trang). */
+function DesktopBridge(): null {
+  useReminder()
+  useDesktopBridge()
+  return null
+}
+
 function Shell(): ReactNode {
   const location = useLocation()
   const fullscreen = location.pathname === '/practice'
@@ -145,6 +153,7 @@ export default function App(): ReactNode {
   }
   return (
     <HashRouter>
+      <DesktopBridge />
       <Shell />
       <Toaster />
     </HashRouter>

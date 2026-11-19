@@ -19,6 +19,8 @@ Học từ vựng tiếng Anh theo chủ đề thông qua luyện gõ. Ứng d�
 - **Theo dõi tiến độ**: số từ đã học / đã thuộc / cần ôn, chuỗi ngày học, thời gian gõ, WPM, độ chính xác, heatmap hoạt động, tiến độ từng chủ đề, biểu đồ theo ngày, danh sách từ khó, lịch sử phiên học.
 - **Ôn tập lặp lại ngắt quãng (Leitner)**: 5 hộp với khoảng ôn 1 → 3 → 7 → 14 → 30 ngày. Gõ đúng khi đến hạn (không dùng gợi ý) thì lên hộp, sai thì về hộp 1. Từ ở hộp 4 trở lên được tính là **đã thuộc**.
 - **Từ vựng của tôi**: tạo chủ đề riêng, thêm từng từ (emoji / URL ảnh / ảnh từ máy đều tùy chọn), **nhập thông minh** (dán danh sách lộn xộn, chỉ từ tiếng Anh, cả đoạn văn hoặc file CSV), **tự phân loại từ vào nhiều chủ đề** khi nhập, và xuất CSV.
+- **🎯 Mục tiêu & nhắc học**: đặt số lượt gõ và/hoặc số phút mỗi ngày, theo dõi bằng vòng tiến độ trên trang Tổng quan (kèm chuỗi ngày đạt mục tiêu). Bật **nhắc học** để nhận thông báo Windows vào giờ đã chọn nếu hôm nay chưa đạt mục tiêu. Có thể **thu app xuống khay** khi đóng cửa sổ và **khởi động cùng Windows** (chạy ẩn dưới khay).
+- **📊 Tổng kết tuần**: trang Thống kê có mục *Tuần này* so với tuần trước (từ mới, từ thuộc thêm, phút gõ, số ngày học, WPM, độ chính xác, từ hay sai). Đầu mỗi tuần, trang Tổng quan hiện bản tổng kết tuần trước.
 - **Sao lưu / khôi phục** toàn bộ dữ liệu ra file JSON; giao diện sáng / tối.
 
 ### Phím tắt khi luyện gõ

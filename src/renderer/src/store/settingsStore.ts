@@ -17,6 +17,18 @@ export interface Settings {
   geminiApiKey: string
   /** Tự gọi AI khi nhập & phân loại (nếu có key). */
   aiClassify: boolean
+  /** Mục tiêu mỗi ngày: số lượt gõ (0 = tắt). */
+  dailyGoalWords: number
+  /** Mục tiêu mỗi ngày: số phút gõ (0 = tắt). */
+  dailyGoalMinutes: number
+  /** Gửi thông báo Windows nhắc học khi chưa đạt mục tiêu. */
+  reminderEnabled: boolean
+  /** Giờ nhắc học, dạng HH:MM. */
+  reminderTime: string
+  /** Bấm nút đóng thì thu app xuống khay hệ thống thay vì thoát. */
+  closeToTray: boolean
+  /** Tự chạy (ẩn dưới khay) khi đăng nhập Windows. */
+  launchAtLogin: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,7 +42,13 @@ export const DEFAULT_SETTINGS: Settings = {
   caseSensitive: false,
   soundEffects: true,
   geminiApiKey: '',
-  aiClassify: true
+  aiClassify: true,
+  dailyGoalWords: 20,
+  dailyGoalMinutes: 0,
+  reminderEnabled: false,
+  reminderTime: '20:00',
+  closeToTray: false,
+  launchAtLogin: false
 }
 
 interface SettingsStore extends Settings {

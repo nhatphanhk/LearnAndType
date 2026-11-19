@@ -2,7 +2,12 @@ import { useMemo, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { pickLessonWords } from '@/core/queue'
 import { summarize, topicProgress } from '@/core/stats'
-import { groupByTopic, useNow, useProgressMap, useSessions, useTopics, useWords } from '@/hooks/useData'
+import { groupByTopic, useAttemptsSince, useMeta, useNow, useProgressMap, useSessions, useTopics, useWords } from '@/hooks/useData'
+import { startOfWeek, weeklyReport } from '@/core/weekly'
+import { addDays, dayKey } from '@/core/stats'
+import { setMeta } from '@/db/repo'
+import { GoalCard } from '@/components/GoalCard'
+import { WeeklySummary, weekRange } from '@/components/WeeklySummary'
 import { useSettings } from '@/store/settingsStore'
 import { ActivityHeatmap } from '@/components/ActivityHeatmap'
 import { TopicIcon } from '@/components/TopicIcon'
@@ -28,6 +33,17 @@ export default function Dashboard(): ReactNode {
   const now = useNow()
 
   const byTopic = useMemo(() => groupByTopic(words ?? []), [words])
+  const thisWeek = startOfWeek(now)
+  const lastWeekAttempts = useAttemptsSince(addDays(thisWeek, -7))
+  const weeklySeen = useMeta<string | null>('lastWeeklySeen', null)
+  const wordMap = useMemo(() => new Map((words ?? []).map((w) => [w.id, w])), [words])
+  const lastWeek = useMemo(
+    () =>
+      sessions && progress && lastWeekAttempts
+        ? weeklyReport(sessions, lastWeekAttempts, [...progress.values()], now, -1)
+        : null,
+    [sessions, progress, lastWeekAttempts, now]
+  )
   const summary = useMemo(
     () => (progress && sessions && words ? summarize([...progress.values()], sessions, words.length, now) : null),
     [progress, sessions, words, now]
@@ -62,6 +78,22 @@ export default function Dashboard(): ReactNode {
   return (
     <div>
       <PageHeader title={`${greeting(now)}! 👋`} subtitle="Mỗi ngày gõ một ít, từ vựng sẽ nhớ lâu hơn." />
+
+      {lastWeek && lastWeek.week.sessions > 0 && weeklySeen !== undefined && weeklySeen !== dayKey(thisWeek) && (
+        <Card className="mb-4 border-indigo-200 bg-indigo-50/60 dark:border-indigo-900 dark:bg-indigo-950/40">
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <h2 className="font-semibold">📊 Tổng kết tuần trước ({weekRange(lastWeek.week)})</h2>
+            <Button size="sm" variant="ghost" onClick={() => void setMeta('lastWeeklySeen', dayKey(thisWeek))}>
+              Đã xem ✕
+            </Button>
+          </div>
+          <WeeklySummary report={lastWeek} words={wordMap} />
+        </Card>
+      )}
+
+      <div className="mb-4">
+        <GoalCard sessions={sessions} now={now} />
+      </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile

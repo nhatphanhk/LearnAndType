@@ -1,14 +1,35 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, shell, Tray } from 'electron'
+// Icon riêng của app (thay icon Electron mặc định trên cửa sổ/taskbar, cả khi chạy dev)
+import iconIco from '../../build/icon.ico?asset'
+import iconPng from '../../build/icon.png?asset'
 
 const isDev = !app.isPackaged
+const appIcon = process.platform === 'win32' ? iconIco : iconPng
+/** Mở cùng Windows: chạy ẩn dưới khay. */
+const startHidden = process.argv.includes('--hidden')
 
 // Cho phép dùng thư mục dữ liệu riêng (kiểm thử tự động, nhiều hồ sơ học)
 if (process.env['LEARNANDTYPE_USER_DATA']) {
   app.setPath('userData', process.env['LEARNANDTYPE_USER_DATA'])
 }
 
-function createWindow(): BrowserWindow {
+let mainWindow: BrowserWindow | null = null
+let tray: Tray | null = null
+/** Bấm đóng chỉ ẩn cửa sổ (do renderer đặt theo cài đặt). */
+let closeToTray = false
+/** Đang thoát thật (từ menu khay) — không chặn sự kiện close nữa. */
+let isQuitting = false
+
+function loadRenderer(win: BrowserWindow, hash = ''): void {
+  if (isDev && process.env['ELECTRON_RENDERER_URL']) {
+    void win.loadURL(process.env['ELECTRON_RENDERER_URL'] + (hash ? `#${hash}` : ''))
+  } else {
+    void win.loadFile(join(__dirname, '../renderer/index.html'), hash ? { hash } : undefined)
+  }
+}
+
+function createWindow(showOnReady = true): BrowserWindow {
   const win = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -16,6 +37,7 @@ function createWindow(): BrowserWindow {
     minHeight: 640,
     show: false,
     title: 'LearnAndType',
+    icon: appIcon,
     backgroundColor: '#0f172a',
     autoHideMenuBar: true,
     webPreferences: {
@@ -27,7 +49,17 @@ function createWindow(): BrowserWindow {
     }
   })
 
-  win.once('ready-to-show', () => win.show())
+  if (showOnReady) win.once('ready-to-show', () => win.show())
+
+  win.on('close', (event) => {
+    if (closeToTray && !isQuitting) {
+      event.preventDefault()
+      win.hide()
+    }
+  })
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
+  })
 
   // Mở link ngoài bằng trình duyệt mặc định, không mở cửa sổ Electron mới
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -47,35 +79,72 @@ function createWindow(): BrowserWindow {
     }
   })
 
-  if (isDev && process.env['ELECTRON_RENDERER_URL']) {
-    void win.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    void win.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+  loadRenderer(win)
   return win
+}
+
+/** Hiện cửa sổ chính (tạo mới nếu đã đóng), tùy chọn chuyển tới một trang. */
+function showMain(route?: string): void {
+  if (!mainWindow) mainWindow = createWindow()
+  const win = mainWindow
+  if (win.isMinimized()) win.restore()
+  win.show()
+  win.focus()
+  if (route) win.webContents.send('app:navigate', route)
+}
+
+function createTray(): void {
+  tray = new Tray(appIcon)
+  tray.setToolTip('LearnAndType')
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: 'Mở LearnAndType', click: () => showMain() },
+      { label: 'Ôn tập ngay', click: () => showMain('/review') },
+      { type: 'separator' },
+      {
+        label: 'Thoát',
+        click: () => {
+          isQuitting = true
+          app.quit()
+        }
+      }
+    ])
+  )
+  tray.on('click', () => showMain())
+}
+
+function registerIpc(): void {
+  ipcMain.handle('app:version', () => app.getVersion())
+  ipcMain.handle('app:focus', (_e, route: unknown) => showMain(typeof route === 'string' ? route : undefined))
+  ipcMain.handle('app:setCloseToTray', (_e, value: unknown) => {
+    closeToTray = value === true
+  })
+  ipcMain.handle('app:setLaunchAtLogin', (_e, value: unknown) => {
+    // Bản dev chạy bằng electron.exe — không đăng ký để khỏi khởi động nhầm
+    if (isDev) return false
+    app.setLoginItemSettings({ openAtLogin: value === true, args: ['--hidden'] })
+    return app.getLoginItemSettings({ args: ['--hidden'] }).openAtLogin
+  })
 }
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
-    const [win] = BrowserWindow.getAllWindows()
-    if (win) {
-      if (win.isMinimized()) win.restore()
-      win.focus()
-    }
+  app.on('second-instance', () => showMain())
+
+  app.on('before-quit', () => {
+    isQuitting = true
   })
 
   app.whenReady().then(() => {
     app.setAppUserModelId('com.learnandtype.app')
     Menu.setApplicationMenu(null)
-    ipcMain.handle('app:version', () => app.getVersion())
-    createWindow()
+    registerIpc()
+    createTray()
+    mainWindow = createWindow(!startHidden)
 
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
-    })
+    app.on('activate', () => showMain())
   })
 
   app.on('window-all-closed', () => {

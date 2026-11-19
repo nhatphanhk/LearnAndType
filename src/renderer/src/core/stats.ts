@@ -9,7 +9,7 @@ export function dayKey(ts: number): string {
   return `${d.getFullYear()}-${m}-${day}`
 }
 
-function addDays(ts: number, days: number): number {
+export function addDays(ts: number, days: number): number {
   const d = new Date(startOfDay(ts))
   d.setDate(d.getDate() + days)
   return d.getTime()

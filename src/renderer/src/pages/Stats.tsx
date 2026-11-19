@@ -4,7 +4,10 @@ import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContaine
 import { db } from '@/db/schema'
 import { dailySeries } from '@/core/stats'
 import { MASTERED_BOX } from '@/core/srs'
-import { useNow, useProgressMap, useSessions, useTopics } from '@/hooks/useData'
+import { useAttemptsSince, useNow, useProgressMap, useSessions, useTopics } from '@/hooks/useData'
+import { addDays } from '@/core/stats'
+import { startOfWeek, weeklyReport } from '@/core/weekly'
+import { WeeklySummary, weekRange } from '@/components/WeeklySummary'
 import { useChartColors } from '@/hooks/useIsDark'
 import { Badge, Card, EmptyState, PageHeader, cx } from '@/components/ui'
 import { WordImage } from '@/components/WordImage'
@@ -49,6 +52,12 @@ export default function Stats(): ReactNode {
   const now = useNow()
   const c = useChartColors()
   const [range, setRange] = useState<(typeof RANGES)[number]>(30)
+
+  const weekAttempts = useAttemptsSince(addDays(startOfWeek(now), -7))
+  const week = useMemo(
+    () => (sessions && progress && weekAttempts ? weeklyReport(sessions, weekAttempts, [...progress.values()], now) : null),
+    [sessions, progress, weekAttempts, now]
+  )
 
   const words = useLiveQuery(async () => new Map((await db.words.toArray()).map((w) => [w.id, w])), [])
 
@@ -119,6 +128,14 @@ export default function Stats(): ReactNode {
         </Card>
       ) : (
         <>
+          {week && (
+            <Card className="mb-6">
+              <h2 className="mb-3 font-semibold">
+                Tuần này <span className="text-sm font-normal text-slate-500">({weekRange(week.week)} · so với tuần trước)</span>
+              </h2>
+              <WeeklySummary report={week} words={words} />
+            </Card>
+          )}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ChartCard title="Từ mới đã học mỗi ngày" subtitle={`${series.reduce((a, d) => a + d.newWords, 0)} từ trong ${range} ngày`}>
               <ResponsiveContainer width="100%" height="100%">

@@ -513,3 +513,14 @@ export async function resetProgress(): Promise<void> {
     await Promise.all([db.progress.clear(), db.sessions.clear(), db.attempts.clear()])
   })
 }
+
+/* ------------------------------ Trạng thái nhỏ (meta) ------------------------------ */
+
+export async function getMeta<T>(key: string, fallback: T): Promise<T> {
+  const row = await db.meta.get(key)
+  return row === undefined ? fallback : (row.value as T)
+}
+
+export async function setMeta(key: string, value: unknown): Promise<void> {
+  await db.meta.put({ key, value })
+}
