@@ -281,6 +281,25 @@ export default function SettingsPage(): ReactNode {
             onChange={(v) => s.set({ soundEffects: v })}
             label="Âm thanh đúng / sai"
           />
+          <div className="flex items-center justify-between gap-4 py-3">
+            <span>
+              <span className="block font-medium">Thuật toán ôn tập</span>
+              <span className="block text-sm text-slate-500">
+                {s.srsAlgorithm === 'fsrs'
+                  ? 'FSRS: mỗi từ có lịch ôn riêng theo độ khó, số lỗi và tốc độ gõ của bạn.'
+                  : 'Leitner: 5 hộp cố định 1 → 3 → 7 → 14 → 30 ngày.'}
+              </span>
+            </span>
+            <select
+              className={cx(inputCls, 'w-48')}
+              value={s.srsAlgorithm}
+              onChange={(e) => s.set({ srsAlgorithm: e.target.value === 'leitner' ? 'leitner' : 'fsrs' })}
+              aria-label="Thuật toán ôn tập"
+            >
+              <option value="fsrs">FSRS (thông minh)</option>
+              <option value="leitner">Leitner (5 hộp)</option>
+            </select>
+          </div>
         </div>
       </Card>
 

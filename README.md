@@ -17,7 +17,8 @@ Học từ vựng tiếng Anh theo chủ đề thông qua luyện gõ. Ứng d�
 - **🔤 Gõ chữ (không hình ảnh)**: trang riêng trên thanh bên. Chọn chủ đề rồi chọn *Chép từ / Nhớ từ / Nghe & gõ / Điền vào câu*. Màn gõ và màn tổng kết chỉ có chữ (từ, phiên âm, nghĩa, câu ví dụ), không có ảnh hay icon, kể cả với chủ đề có sẵn. Nút **✨ Nhập thông minh** tạo ngay một chủ đề mới từ danh sách hoặc đoạn văn bạn dán vào. Phiên gõ chữ được đánh dấu **Chỉ chữ** trong lịch sử phiên học.
 - **Dữ liệu không cần ảnh hay icon**: ảnh/emoji của từ và icon của chủ đề đều **không bắt buộc**. Từ không có ảnh chỉ hiện dạng chữ, chủ đề không có icon thì hiện chữ cái đầu của tên.
 - **Theo dõi tiến độ**: số từ đã học / đã thuộc / cần ôn, chuỗi ngày học, thời gian gõ, WPM, độ chính xác, heatmap hoạt động, tiến độ từng chủ đề, biểu đồ theo ngày, danh sách từ khó, lịch sử phiên học.
-- **Ôn tập lặp lại ngắt quãng (Leitner)**: 5 hộp với khoảng ôn 1 → 3 → 7 → 14 → 30 ngày. Gõ đúng khi đến hạn (không dùng gợi ý) thì lên hộp, sai thì về hộp 1. Từ ở hộp 4 trở lên được tính là **đã thuộc**.
+- **Ôn tập lặp lại ngắt quãng (FSRS hoặc Leitner)**: mặc định dùng **FSRS**, mỗi từ có lịch ôn riêng. Gõ sai thì ôn lại sớm; dùng gợi ý, có phím sai hoặc gõ chậm thì khoảng ôn tăng ít; gõ sạch và nhanh thì khoảng ôn dài hơn. Có thể chuyển về **Leitner** (5 hộp cố định 1 → 3 → 7 → 14 → 30 ngày) trong Cài đặt. Ở cả hai thuật toán, từ được xếp vào 5 hộp theo khoảng ôn; từ ở hộp 4 trở lên (khoảng ôn từ 14 ngày) được tính là **đã thuộc**. Gõ đúng khi chưa đến hạn chỉ được ghi nhận, không làm thay đổi lịch.
+- **🔍 Phân tích lỗi gõ**: trang Thống kê phân loại các lần trả lời sai (quên từ, sai đuôi -tion/-sion, nhầm ie/ei, chữ đôi, chữ câm, đảo chữ, nhầm nguyên âm…) và liệt kê các phím hay gõ nhầm. Nút **Luyện N từ** mở ngay phiên luyện riêng cho nhóm lỗi đó.
 - **Từ vựng của tôi**: tạo chủ đề riêng, thêm từng từ (emoji / URL ảnh / ảnh từ máy đều tùy chọn), **nhập thông minh** (dán danh sách lộn xộn, chỉ từ tiếng Anh, cả đoạn văn hoặc file CSV), **tự phân loại từ vào nhiều chủ đề** khi nhập, và xuất CSV.
 - **🎯 Mục tiêu & nhắc học**: đặt số lượt gõ và/hoặc số phút mỗi ngày, theo dõi bằng vòng tiến độ trên trang Tổng quan (kèm chuỗi ngày đạt mục tiêu). Bật **nhắc học** để nhận thông báo Windows vào giờ đã chọn nếu hôm nay chưa đạt mục tiêu. Có thể **thu app xuống khay** khi đóng cửa sổ và **khởi động cùng Windows** (chạy ẩn dưới khay).
 - **📊 Tổng kết tuần**: trang Thống kê có mục *Tuần này* so với tuần trước (từ mới, từ thuộc thêm, phút gõ, số ngày học, WPM, độ chính xác, từ hay sai). Đầu mỗi tuần, trang Tổng quan hiện bản tổng kết tuần trước.
@@ -160,7 +161,7 @@ Toàn bộ dữ liệu (tiến độ, chủ đề tự tạo, ảnh) nằm trong
 src/main/            Tiến trình chính của Electron (cửa sổ, bảo mật)
 src/preload/         Cầu nối tối thiểu sang giao diện
 src/renderer/src/
-  core/              Logic thuần + test: so khớp gõ phím, SRS Leitner, hàng đợi, thống kê, CSV, nhập thông minh (smartParse, extract, lookup), phân loại chủ đề (classify)
+  core/              Logic thuần + test: so khớp gõ phím, SRS (FSRS/Leitner), phân tích lỗi (mistakes), mục tiêu & tổng kết tuần (goals, weekly), hàng đợi, thống kê, CSV, nhập thông minh (smartParse, extract, lookup), phân loại chủ đề (classify)
   data/builtin/      12 chủ đề có sẵn
   db/                Dexie (IndexedDB): schema, seed, truy vấn, sao lưu
   store/             Zustand: phiên luyện gõ (máy trạng thái), cài đặt

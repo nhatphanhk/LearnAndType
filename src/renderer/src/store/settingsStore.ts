@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import type { SrsAlgorithm } from '@/types'
 
 export type ThemeSetting = 'system' | 'light' | 'dark'
 
@@ -29,6 +30,8 @@ export interface Settings {
   closeToTray: boolean
   /** Tự chạy (ẩn dưới khay) khi đăng nhập Windows. */
   launchAtLogin: boolean
+  /** Thuật toán lên lịch ôn tập. */
+  srsAlgorithm: SrsAlgorithm
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -48,7 +51,8 @@ export const DEFAULT_SETTINGS: Settings = {
   reminderEnabled: false,
   reminderTime: '20:00',
   closeToTray: false,
-  launchAtLogin: false
+  launchAtLogin: false,
+  srsAlgorithm: 'fsrs'
 }
 
 interface SettingsStore extends Settings {

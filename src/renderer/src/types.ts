@@ -3,6 +3,9 @@ export type WordStatus = 'new' | 'learning' | 'mastered'
 /** Cách hiển thị/gõ của từng lượt (mỗi lượt = 1 từ). */
 export type PracticeMode = 'copy' | 'recall' | 'listen' | 'cloze'
 
+/** Thuật toán lặp lại ngắt quãng. */
+export type SrsAlgorithm = 'fsrs' | 'leitner'
+
 /** Loại phiên luyện tập. */
 export type SessionKind = 'lesson' | 'copy' | 'recall' | 'listen' | 'cloze' | 'review' | 'retry'
 
@@ -50,6 +53,16 @@ export interface WordProgress {
   nextReviewAt: number
   firstLearnedAt: number | null
   masteredAt: number | null
+  /* Trạng thái FSRS (chỉ có khi từ đã được ôn bằng FSRS). */
+  stability?: number
+  difficulty?: number
+  reps?: number
+  lapses?: number
+  /** 0 = mới, 1 = đang học, 2 = ôn, 3 = học lại (theo FSRS). */
+  fsrsState?: number
+  /** Số ngày đã lên lịch ở lần ôn gần nhất. */
+  scheduledDays?: number
+  lastReviewAt?: number
 }
 
 export interface Session {
@@ -81,6 +94,10 @@ export interface Attempt {
   hinted: boolean
   errors: number
   durationMs: number
+  /** Câu trả lời đã nộp khi sai (để phân tích lỗi). */
+  answer?: string
+  /** Cặp phím gõ sai trong lượt, dạng "chữ đúng>chữ đã gõ". */
+  wrongKeys?: string[]
   at: number
 }
 

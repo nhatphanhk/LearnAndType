@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { buildQueue, requeue, type QueueItem } from '@/core/queue'
-import { calcAccuracy, calcWpm, classifyKeystroke, isMatch, makeCloze, nextHint } from '@/core/typing'
+import { calcAccuracy, calcWpm, classifyKeystroke, isMatch, makeCloze, nextHint, wrongKeyPairs } from '@/core/typing'
 import { discardSessionIfEmpty, recordAttempt, saveSessionStats, startSession } from '@/db/repo'
 import { useSettings } from './settingsStore'
 import type { PracticeMode, SessionKind, Word } from '@/types'
@@ -20,6 +20,8 @@ export interface ItemResult {
 
 /** Khoảng nghỉ giữa 2 phím lớn hơn mức này thì không tính vào thời gian gõ. */
 const IDLE_MS = 5000
+/** Giới hạn số cặp phím sai lưu cho mỗi lượt. */
+const MAX_WRONG_KEYS = 20
 
 interface PracticeData {
   status: 'idle' | 'running' | 'finished'
@@ -38,6 +40,8 @@ interface PracticeData {
   lastAnswer: string
   hinted: boolean
   itemErrors: number
+  /** Các cặp phím sai "đúng>gõ" của lượt đang gõ (để phân tích lỗi). */
+  itemWrongKeys: string[]
   itemStartedAt: number
   lastKeyAt: number | null
   /** Tăng mỗi lần nhấn Enter khi chưa đúng để giao diện rung báo hiệu. */
@@ -84,6 +88,7 @@ const initial: PracticeData = {
   lastAnswer: '',
   hinted: false,
   itemErrors: 0,
+  itemWrongKeys: [],
   itemStartedAt: 0,
   lastKeyAt: null,
   shake: 0,
@@ -150,7 +155,10 @@ export const usePractice = create<PracticeState>()((set, get) => {
         correct,
         hinted: s.hinted,
         errors: s.itemErrors,
-        durationMs: now - s.itemStartedAt
+        durationMs: now - s.itemStartedAt,
+        answer: correct ? undefined : s.lastAnswer,
+        wrongKeys: s.itemWrongKeys.length > 0 ? s.itemWrongKeys.slice(0, MAX_WRONG_KEYS) : undefined,
+        algorithm: useSettings.getState().srsAlgorithm
       },
       now
     )
@@ -225,6 +233,9 @@ export const usePractice = create<PracticeState>()((set, get) => {
           ? { pendingKeys: s.pendingKeys + keys, pendingCorrectKeys: s.pendingCorrectKeys + correctKeys }
           : { keystrokes: s.keystrokes + keys, correctKeystrokes: s.correctKeystrokes + correctKeys }),
         itemErrors: s.itemErrors + (k ? k.wrong : 0),
+        ...(s.phase === 'typing' && k && k.wrong > 0
+          ? { itemWrongKeys: [...s.itemWrongKeys, ...wrongKeyPairs(target, s.typed, value, caseSensitive())] }
+          : {}),
         activeMs: s.activeMs + (gap > 0 && gap < IDLE_MS ? gap : 0),
         lastKeyAt: now
       })
@@ -307,6 +318,7 @@ export const usePractice = create<PracticeState>()((set, get) => {
         lastAnswer: '',
         hinted: false,
         itemErrors: 0,
+        itemWrongKeys: [],
         pendingKeys: 0,
         pendingCorrectKeys: 0,
         itemStartedAt: Date.now(),

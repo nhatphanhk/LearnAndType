@@ -82,6 +82,20 @@ export function classifyKeystroke(
   return { correct, wrong }
 }
 
+/**
+ * Các phím gõ sai trong lần thêm ký tự này, dạng "chữ đúng>chữ đã gõ" (ví dụ "e>i").
+ * Ký tự gõ thừa sau cuối đáp án được ghi là ">x".
+ */
+export function wrongKeyPairs(target: string, prev: string, next: string, caseSensitive = false): string[] {
+  if (next.length <= prev.length || !next.startsWith(prev)) return []
+  const out: string[] = []
+  for (let i = prev.length; i < next.length; i++) {
+    if (i < target.length && charsEqual(target[i], next[i], caseSensitive)) continue
+    out.push(`${i < target.length ? target[i].toLowerCase() : ''}>${next[i].toLowerCase()}`)
+  }
+  return out
+}
+
 /** Gợi ý: giữ phần đầu đã gõ đúng rồi thêm 1 ký tự tiếp theo của đáp án. */
 export function nextHint(target: string, typed: string, caseSensitive = false): string {
   let i = 0

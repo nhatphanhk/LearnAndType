@@ -59,6 +59,38 @@ describe('recordAttempt', () => {
     expect(await discardSessionIfEmpty(sid)).toBe(false)
   })
 
+  it('lưu câu trả lời sai và phím sai; dùng FSRS khi được chọn', async () => {
+    await ensureSeed(NOW)
+    const word = (await db.words.get('animals:cat'))!
+    const sid = await startSession('recall', 'animals', NOW)
+    await recordAttempt({ sessionId: sid, word, mode: 'copy', correct: true, hinted: false, errors: 0, durationMs: 2000 }, NOW)
+    await recordAttempt(
+      {
+        sessionId: sid,
+        word,
+        mode: 'recall',
+        correct: false,
+        hinted: false,
+        errors: 1,
+        durationMs: 3000,
+        answer: 'kat',
+        wrongKeys: ['c>k'],
+        algorithm: 'fsrs'
+      },
+      NOW + DAY_MS
+    )
+    const [, wrong] = await db.attempts.orderBy('id').toArray()
+    expect(wrong).toMatchObject({ answer: 'kat', wrongKeys: ['c>k'], correct: false })
+    const ok = (await db.attempts.orderBy('id').first())!
+    expect(ok.answer).toBeUndefined()
+    expect(ok.wrongKeys).toBeUndefined()
+    const p = (await db.progress.get('animals:cat'))!
+    // Only copied, never tested → new FSRS card: a wrong answer is not a "lapse"
+    expect(p.fsrsState).toBeDefined()
+    expect(p.lapses).toBe(0)
+    expect(p.box).toBe(1)
+  })
+
   it('xóa phiên rỗng', async () => {
     const sid = await startSession('recall', null, NOW)
     expect(await discardSessionIfEmpty(sid)).toBe(true)

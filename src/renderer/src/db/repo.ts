@@ -3,7 +3,7 @@ import { builtinEntities, BUILTIN_VERSION } from '@/data/builtin'
 import { applyReview, newProgress, type ReviewResult } from '@/core/srs'
 import type { CsvWord } from '@/core/csv'
 import { normalizeName, type Target } from '@/core/classify'
-import type { Attempt, PracticeMode, Session, SessionKind, StoredImage, Topic, Word, WordProgress } from '@/types'
+import type { Attempt, PracticeMode, Session, SessionKind, SrsAlgorithm, StoredImage, Topic, Word, WordProgress } from '@/types'
 
 const uid = (): string => crypto.randomUUID()
 
@@ -90,6 +90,12 @@ export interface AttemptInput {
   hinted: boolean
   errors: number
   durationMs: number
+  /** Câu trả lời đã nộp (chỉ khi sai). */
+  answer?: string
+  /** Cặp phím gõ sai "đúng>gõ". */
+  wrongKeys?: string[]
+  /** Thuật toán lặp lại ngắt quãng (mặc định Leitner). */
+  algorithm?: SrsAlgorithm
 }
 
 /** Ghi lượt gõ và cập nhật tiến độ SRS của từ trong một transaction. */
@@ -98,7 +104,15 @@ export async function recordAttempt(input: AttemptInput, now = Date.now()): Prom
     const prev = (await db.progress.get(input.word.id)) ?? newProgress(input.word.id, input.word.topicId, now)
     const result = applyReview(
       { ...prev, topicId: input.word.topicId },
-      { mode: input.mode, correct: input.correct, hinted: input.hinted },
+      {
+        mode: input.mode,
+        correct: input.correct,
+        hinted: input.hinted,
+        algorithm: input.algorithm,
+        errors: input.errors,
+        durationMs: input.durationMs,
+        answerLength: input.word.word.length
+      },
       now
     )
     await db.progress.put(result.progress)
@@ -111,6 +125,8 @@ export async function recordAttempt(input: AttemptInput, now = Date.now()): Prom
       hinted: input.hinted,
       errors: input.errors,
       durationMs: input.durationMs,
+      ...(input.answer !== undefined ? { answer: input.answer } : {}),
+      ...(input.wrongKeys?.length ? { wrongKeys: input.wrongKeys } : {}),
       at: now
     }
     await db.attempts.add(attempt)

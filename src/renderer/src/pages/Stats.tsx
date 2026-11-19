@@ -8,6 +8,7 @@ import { useAttemptsSince, useNow, useProgressMap, useSessions, useTopics } from
 import { addDays } from '@/core/stats'
 import { startOfWeek, weeklyReport } from '@/core/weekly'
 import { WeeklySummary, weekRange } from '@/components/WeeklySummary'
+import { MistakeAnalysis } from '@/components/MistakeAnalysis'
 import { useChartColors } from '@/hooks/useIsDark'
 import { Badge, Card, EmptyState, PageHeader, cx } from '@/components/ui'
 import { WordImage } from '@/components/WordImage'
@@ -54,6 +55,8 @@ export default function Stats(): ReactNode {
   const [range, setRange] = useState<(typeof RANGES)[number]>(30)
 
   const weekAttempts = useAttemptsSince(addDays(startOfWeek(now), -7))
+  // Phân tích lỗi trong 90 ngày gần nhất
+  const mistakeAttempts = useAttemptsSince(addDays(now, -90))
   const week = useMemo(
     () => (sessions && progress && weekAttempts ? weeklyReport(sessions, weekAttempts, [...progress.values()], now) : null),
     [sessions, progress, weekAttempts, now]
@@ -243,6 +246,8 @@ export default function Stats(): ReactNode {
               )}
             </Card>
           </div>
+
+          {mistakeAttempts && <MistakeAnalysis attempts={mistakeAttempts} words={words} />}
 
           <Card className="mt-6 p-0">
             <div className="border-b border-slate-200 px-5 py-3 font-semibold dark:border-slate-800">Lịch sử phiên học</div>
