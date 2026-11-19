@@ -22,6 +22,7 @@ Học từ vựng tiếng Anh theo chủ đề thông qua luyện gõ. Ứng d�
 - **Từ vựng của tôi**: tạo chủ đề riêng, thêm từng từ (emoji / URL ảnh / ảnh từ máy đều tùy chọn), **nhập thông minh** (dán danh sách lộn xộn, chỉ từ tiếng Anh, cả đoạn văn hoặc file CSV), **tự phân loại từ vào nhiều chủ đề** khi nhập, và xuất CSV.
 - **🎯 Mục tiêu & nhắc học**: đặt số lượt gõ và/hoặc số phút mỗi ngày, theo dõi bằng vòng tiến độ trên trang Tổng quan (kèm chuỗi ngày đạt mục tiêu). Bật **nhắc học** để nhận thông báo Windows vào giờ đã chọn nếu hôm nay chưa đạt mục tiêu. Có thể **thu app xuống khay** khi đóng cửa sổ và **khởi động cùng Windows** (chạy ẩn dưới khay).
 - **📊 Tổng kết tuần**: trang Thống kê có mục *Tuần này* so với tuần trước (từ mới, từ thuộc thêm, phút gõ, số ngày học, WPM, độ chính xác, từ hay sai). Đầu mỗi tuần, trang Tổng quan hiện bản tổng kết tuần trước.
+- **🔎 Tra nhanh toàn cục**: ở bất kỳ ứng dụng nào, bôi đen một từ tiếng Anh, nhấn `Ctrl` + `C` rồi nhấn `Ctrl` + `Shift` + `L` (đổi được trong Cài đặt). Một cửa sổ nhỏ hiện cạnh con trỏ với nghĩa, phiên âm, câu ví dụ và nút nghe; chọn chủ đề (có gợi ý ★) rồi **＋ Thêm** là xong. Từ có sẵn tra được cả khi offline; từ khác cần mạng. App phải đang chạy (có thể ẩn dưới khay).
 - **Sao lưu / khôi phục** toàn bộ dữ liệu ra file JSON; giao diện sáng / tối.
 
 ### Phím tắt khi luyện gõ

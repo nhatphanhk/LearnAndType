@@ -32,6 +32,10 @@ export interface Settings {
   launchAtLogin: boolean
   /** Thuật toán lên lịch ôn tập. */
   srsAlgorithm: SrsAlgorithm
+  /** Bật phím tắt toàn cục tra nhanh từ trong clipboard. */
+  quickLookupEnabled: boolean
+  /** Phím tắt tra nhanh (định dạng Electron accelerator). */
+  quickLookupShortcut: string
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -52,7 +56,9 @@ export const DEFAULT_SETTINGS: Settings = {
   reminderTime: '20:00',
   closeToTray: false,
   launchAtLogin: false,
-  srsAlgorithm: 'fsrs'
+  srsAlgorithm: 'fsrs',
+  quickLookupEnabled: true,
+  quickLookupShortcut: 'CommandOrControl+Shift+L'
 }
 
 interface SettingsStore extends Settings {

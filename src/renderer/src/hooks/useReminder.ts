@@ -62,4 +62,10 @@ export function useDesktopBridge(): void {
   }, [launchAtLogin])
 
   useEffect(() => window.api?.onNavigate((route) => navigate(route)), [navigate])
+
+  const quickEnabled = useSettings((s) => s.quickLookupEnabled)
+  const quickShortcut = useSettings((s) => s.quickLookupShortcut)
+  useEffect(() => {
+    void window.api?.setQuickShortcut(quickEnabled ? quickShortcut : '')
+  }, [quickEnabled, quickShortcut])
 }

@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, ipcMain, Menu, shell, Tray } from 'electron'
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, screen, shell, Tray } from 'electron'
 // Icon riêng của app (thay icon Electron mặc định trên cửa sổ/taskbar, cả khi chạy dev)
 import iconIco from '../../build/icon.ico?asset'
 import iconPng from '../../build/icon.png?asset'
@@ -20,6 +20,98 @@ let tray: Tray | null = null
 let closeToTray = false
 /** Đang thoát thật (từ menu khay) — không chặn sự kiện close nữa. */
 let isQuitting = false
+
+/* ------------------------------ Tra nhanh toàn cục ------------------------------ */
+
+const QUICK_W = 420
+const QUICK_H = 540
+const QUICK_MAX_TEXT = 200
+let quickWindow: BrowserWindow | null = null
+/** Chữ lấy từ clipboard ở lần gọi tra nhanh gần nhất. */
+let quickText = ''
+let quickAccelerator: string | null = null
+
+function createQuickWindow(): BrowserWindow {
+  const win = new BrowserWindow({
+    width: QUICK_W,
+    height: QUICK_H,
+    show: false,
+    frame: false,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    title: 'Tra nhanh · LearnAndType',
+    icon: appIcon,
+    backgroundColor: '#0f172a',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      spellcheck: false
+    }
+  })
+  win.on('blur', () => {
+    if (!win.webContents.isDevToolsOpened()) win.hide()
+  })
+  win.on('closed', () => {
+    if (quickWindow === win) quickWindow = null
+  })
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.key === 'F12' && isDev) {
+      win.webContents.openDevTools({ mode: 'detach' })
+      event.preventDefault()
+    }
+  })
+  loadRenderer(win, '/quick')
+  return win
+}
+
+/** Đặt popup cạnh con trỏ chuột, không tràn khỏi màn hình. */
+function positionNearCursor(win: BrowserWindow): void {
+  const pt = screen.getCursorScreenPoint()
+  const area = screen.getDisplayNearestPoint(pt).workArea
+  const x = Math.min(Math.max(pt.x + 12, area.x), area.x + area.width - QUICK_W)
+  const y = Math.min(Math.max(pt.y + 12, area.y), area.y + area.height - QUICK_H)
+  win.setBounds({ x: Math.round(x), y: Math.round(y), width: QUICK_W, height: QUICK_H })
+}
+
+async function openQuickLookup(): Promise<void> {
+  // clipboard.readText() có thể là hàm đồng bộ hoặc trả về Promise tùy phiên bản Electron
+  const raw: string = await Promise.resolve(clipboard.readText()).catch(() => '')
+  quickText = raw.replace(/\s+/g, ' ').trim().slice(0, QUICK_MAX_TEXT)
+  const fresh = !quickWindow
+  if (!quickWindow) quickWindow = createQuickWindow()
+  const win = quickWindow
+  positionNearCursor(win)
+  const show = (): void => {
+    win.show()
+    win.focus()
+  }
+  if (fresh) {
+    win.once('ready-to-show', show)
+  } else {
+    win.webContents.send('quick:text', quickText)
+    show()
+  }
+}
+
+/** Đăng ký (hoặc gỡ, khi `accel` rỗng) phím tắt tra nhanh. Trả về true nếu đăng ký được. */
+function setQuickShortcut(accel: string | null): boolean {
+  if (quickAccelerator) globalShortcut.unregister(quickAccelerator)
+  quickAccelerator = null
+  if (!accel) return true
+  try {
+    if (!globalShortcut.register(accel, () => void openQuickLookup())) return false
+  } catch {
+    return false
+  }
+  quickAccelerator = accel
+  return true
+}
 
 function loadRenderer(win: BrowserWindow, hash = ''): void {
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
@@ -115,6 +207,15 @@ function createTray(): void {
 
 function registerIpc(): void {
   ipcMain.handle('app:version', () => app.getVersion())
+  ipcMain.handle('quick:setShortcut', (_e, accel: unknown) =>
+    setQuickShortcut(typeof accel === 'string' && accel.trim() ? accel.trim() : null)
+  )
+  ipcMain.handle('quick:getText', () => quickText)
+  ipcMain.handle('quick:hide', () => quickWindow?.hide())
+  ipcMain.handle('quick:openMain', (_e, route: unknown) => {
+    quickWindow?.hide()
+    showMain(typeof route === 'string' ? route : undefined)
+  })
   ipcMain.handle('app:focus', (_e, route: unknown) => showMain(typeof route === 'string' ? route : undefined))
   ipcMain.handle('app:setCloseToTray', (_e, value: unknown) => {
     closeToTray = value === true
@@ -146,6 +247,8 @@ if (!gotLock) {
 
     app.on('activate', () => showMain())
   })
+
+  app.on('will-quit', () => globalShortcut.unregisterAll())
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()

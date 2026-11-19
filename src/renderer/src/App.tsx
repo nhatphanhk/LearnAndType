@@ -17,6 +17,7 @@ import Review from './pages/Review'
 import Stats from './pages/Stats'
 import Manage from './pages/Manage'
 import SettingsPage from './pages/Settings'
+import QuickLookup from './pages/QuickLookup'
 
 function useThemeClass(): void {
   const theme = useSettings((s) => s.theme)
@@ -91,6 +92,8 @@ function Sidebar(): ReactNode {
   )
 }
 
+const IS_QUICK_WINDOW = window.location.hash.startsWith('#/quick')
+
 /** Nhắc học + cầu nối với main process (cần nằm trong Router để chuyển trang). */
 function DesktopBridge(): null {
   useReminder()
@@ -151,6 +154,8 @@ export default function App(): ReactNode {
       </div>
     )
   }
+  // Popup tra nhanh: cửa sổ riêng, không có thanh bên và không chạy nhắc học / cầu nối
+  if (IS_QUICK_WINDOW) return <QuickLookup />
   return (
     <HashRouter>
       <DesktopBridge />

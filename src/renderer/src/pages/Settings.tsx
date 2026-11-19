@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { exportBackup, importBackup, isBackupFile, resetProgress } from '@/db/repo'
-import { useSettings, type ThemeSetting } from '@/store/settingsStore'
+import { DEFAULT_SETTINGS, useSettings, type ThemeSetting } from '@/store/settingsStore'
+import { formatAccelerator, toAccelerator } from '@/core/quick'
 import { speak, speechSupported, useEnglishVoices } from '@/hooks/useSpeech'
 import { toast } from '@/components/Toast'
 import { Button, Card, Field, PageHeader, Toggle, cx, inputCls } from '@/components/ui'
@@ -170,6 +171,76 @@ function GoalSettings(): ReactNode {
   )
 }
 
+function QuickLookupSettings(): ReactNode {
+  const enabled = useSettings((s) => s.quickLookupEnabled)
+  const shortcut = useSettings((s) => s.quickLookupShortcut)
+  const set = useSettings((s) => s.set)
+  const [recording, setRecording] = useState(false)
+  if (!window.api) return null
+
+  const onKeyDown = async (e: React.KeyboardEvent): Promise<void> => {
+    e.preventDefault()
+    if (e.key === 'Escape') {
+      setRecording(false)
+      return
+    }
+    const accel = toAccelerator(e)
+    if (!accel) return
+    setRecording(false)
+    const ok = await window.api?.setQuickShortcut(accel)
+    if (ok) {
+      set({ quickLookupShortcut: accel, quickLookupEnabled: true })
+      toast.success(`Đã đặt phím tắt ${formatAccelerator(accel)}.`)
+    } else {
+      // Đăng ký lại phím cũ
+      void window.api?.setQuickShortcut(enabled ? shortcut : '')
+      toast.error(`${formatAccelerator(accel)} đang được ứng dụng khác dùng. Hãy chọn tổ hợp khác.`)
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <h2 className="font-semibold">🔎 Tra nhanh toàn cục</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Ở bất kỳ ứng dụng nào: bôi đen một từ tiếng Anh, nhấn <b>Ctrl + C</b>, rồi nhấn phím tắt bên dưới. Cửa sổ nhỏ hiện nghĩa,
+        phiên âm và cho thêm từ vào chủ đề ngay. App cần đang chạy (có thể ẩn dưới khay).
+      </p>
+      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <Toggle checked={enabled} onChange={(v) => set({ quickLookupEnabled: v })} label="Bật phím tắt tra nhanh" />
+        <div className="flex items-center justify-between gap-4 py-3">
+          <span className="font-medium">Phím tắt</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRecording(true)}
+              onKeyDown={(e) => recording && void onKeyDown(e)}
+              onBlur={() => setRecording(false)}
+              className={cx(
+                inputCls,
+                'w-56 cursor-pointer text-center font-mono',
+                recording && 'border-indigo-500 ring-2 ring-indigo-500/20'
+              )}
+            >
+              {recording ? 'Nhấn tổ hợp phím…' : formatAccelerator(shortcut)}
+            </button>
+            {shortcut !== DEFAULT_SETTINGS.quickLookupShortcut && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  set({ quickLookupShortcut: DEFAULT_SETTINGS.quickLookupShortcut })
+                }}
+              >
+                Mặc định
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 export default function SettingsPage(): ReactNode {
   const s = useSettings()
   const voices = useEnglishVoices()
@@ -304,6 +375,8 @@ export default function SettingsPage(): ReactNode {
       </Card>
 
       <GoalSettings />
+
+      <QuickLookupSettings />
 
       <Card className="mt-6">
         <h2 className="font-semibold">Phát âm</h2>
