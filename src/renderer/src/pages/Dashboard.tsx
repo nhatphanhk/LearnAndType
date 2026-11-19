@@ -7,6 +7,8 @@ import { startOfWeek, weeklyReport } from '@/core/weekly'
 import { addDays, dayKey } from '@/core/stats'
 import { setMeta } from '@/db/repo'
 import { GoalCard } from '@/components/GoalCard'
+import { LevelBar } from '@/components/LevelBar'
+import { useGamification } from '@/hooks/useGamification'
 import { WeeklySummary, weekRange } from '@/components/WeeklySummary'
 import { useSettings } from '@/store/settingsStore'
 import { ActivityHeatmap } from '@/components/ActivityHeatmap'
@@ -30,6 +32,7 @@ export default function Dashboard(): ReactNode {
   const sessions = useSessions()
   const lessonSize = useSettings((s) => s.lessonSize)
   const navigate = useNavigate()
+  const game = useGamification()
   const now = useNow()
 
   const byTopic = useMemo(() => groupByTopic(words ?? []), [words])
@@ -91,8 +94,9 @@ export default function Dashboard(): ReactNode {
         </Card>
       )}
 
-      <div className="mb-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <GoalCard sessions={sessions} now={now} />
+        {game && <LevelBar xp={game.xp} level={game.level} compact />}
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -13,7 +13,8 @@ export const KIND_INFO: Record<SessionKind, { title: string; icon: string; desc:
   listen: { title: 'Nghe & gõ', icon: '🎧', desc: 'Nghe phát âm và gõ lại từ nghe được.' },
   cloze: { title: 'Điền vào câu', icon: '🧩', desc: 'Điền từ còn thiếu vào câu ví dụ.' },
   review: { title: 'Ôn tập', icon: '🔁', desc: 'Ôn các từ đến hạn theo lịch lặp lại ngắt quãng.' },
-  retry: { title: 'Luyện lại từ sai', icon: '🎯', desc: 'Gõ lại những từ vừa trả lời sai.' }
+  retry: { title: 'Luyện lại từ sai', icon: '🎯', desc: 'Gõ lại những từ vừa trả lời sai.' },
+  game: { title: 'Trò chơi', icon: '🎮', desc: 'Mini-game gõ từ: Từ rơi, Đua 60 giây.' }
 }
 
 export const MODE_LABEL: Record<PracticeMode, string> = {

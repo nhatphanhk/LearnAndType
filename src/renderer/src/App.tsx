@@ -18,6 +18,9 @@ import Stats from './pages/Stats'
 import Manage from './pages/Manage'
 import SettingsPage from './pages/Settings'
 import QuickLookup from './pages/QuickLookup'
+import Games from './pages/Games'
+import Achievements from './pages/Achievements'
+import { useAchievementWatcher } from './hooks/useGamification'
 
 function useThemeClass(): void {
   const theme = useSettings((s) => s.theme)
@@ -39,7 +42,9 @@ const NAV = [
   { to: '/topics', label: 'Chủ đề', icon: '📚' },
   { to: '/typing', label: 'Gõ chữ', icon: '🔤' },
   { to: '/review', label: 'Ôn tập', icon: '🔁' },
+  { to: '/games', label: 'Trò chơi', icon: '🎮' },
   { to: '/stats', label: 'Thống kê', icon: '📈' },
+  { to: '/achievements', label: 'Thành tích', icon: '🏆' },
   { to: '/manage', label: 'Từ vựng của tôi', icon: '✍️' },
   { to: '/settings', label: 'Cài đặt', icon: '⚙️' }
 ]
@@ -98,6 +103,7 @@ const IS_QUICK_WINDOW = window.location.hash.startsWith('#/quick')
 function DesktopBridge(): null {
   useReminder()
   useDesktopBridge()
+  useAchievementWatcher()
   return null
 }
 
@@ -117,6 +123,8 @@ function Shell(): ReactNode {
             <Route path="/practice" element={<Practice />} />
             <Route path="/review" element={<Review />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/games" element={<Games />} />
+            <Route path="/achievements" element={<Achievements />} />
             <Route path="/manage" element={<Manage />} />
             <Route path="/manage/:id" element={<Manage />} />
             <Route path="/settings" element={<SettingsPage />} />

@@ -7,7 +7,7 @@ export type PracticeMode = 'copy' | 'recall' | 'listen' | 'cloze'
 export type SrsAlgorithm = 'fsrs' | 'leitner'
 
 /** Loại phiên luyện tập. */
-export type SessionKind = 'lesson' | 'copy' | 'recall' | 'listen' | 'cloze' | 'review' | 'retry'
+export type SessionKind = 'lesson' | 'copy' | 'recall' | 'listen' | 'cloze' | 'review' | 'retry' | 'game'
 
 export interface Topic {
   id: string

@@ -23,6 +23,8 @@ Học từ vựng tiếng Anh theo chủ đề thông qua luyện gõ. Ứng d�
 - **🎯 Mục tiêu & nhắc học**: đặt số lượt gõ và/hoặc số phút mỗi ngày, theo dõi bằng vòng tiến độ trên trang Tổng quan (kèm chuỗi ngày đạt mục tiêu). Bật **nhắc học** để nhận thông báo Windows vào giờ đã chọn nếu hôm nay chưa đạt mục tiêu. Có thể **thu app xuống khay** khi đóng cửa sổ và **khởi động cùng Windows** (chạy ẩn dưới khay).
 - **📊 Tổng kết tuần**: trang Thống kê có mục *Tuần này* so với tuần trước (từ mới, từ thuộc thêm, phút gõ, số ngày học, WPM, độ chính xác, từ hay sai). Đầu mỗi tuần, trang Tổng quan hiện bản tổng kết tuần trước.
 - **🔎 Tra nhanh toàn cục**: ở bất kỳ ứng dụng nào, bôi đen một từ tiếng Anh, nhấn `Ctrl` + `C` rồi nhấn `Ctrl` + `Shift` + `L` (đổi được trong Cài đặt). Một cửa sổ nhỏ hiện cạnh con trỏ với nghĩa, phiên âm, câu ví dụ và nút nghe; chọn chủ đề (có gợi ý ★) rồi **＋ Thêm** là xong. Từ có sẵn tra được cả khi offline; từ khác cần mạng. App phải đang chạy (có thể ẩn dưới khay).
+- **🎮 Trò chơi**: hai mini-game dùng từ đã học hoặc một chủ đề. **🌧️ Từ rơi**: nghĩa tiếng Việt rơi xuống, gõ đúng từ tiếng Anh để phá trước khi chạm đáy (3 mạng, càng lúc càng nhanh). **⏱️ Đua 60 giây**: gõ càng nhiều từ càng tốt, đúng liên tiếp để nhân combo, `Tab` để bỏ qua. Từ gõ đúng được ghi như một lượt *Nhớ từ* và tính vào mục tiêu ngày. Ở Từ rơi, từ bị trượt không bị tính là sai; ở Đua 60 giây, từ bỏ qua được tính là chưa nhớ.
+- **🏆 Thành tích**: XP (Chép +2, Nhớ/Nghe/Điền +10, dùng gợi ý được một nửa), cấp độ và danh hiệu, 15 huy hiệu (chuỗi ngày, số từ thuộc, WPM, 50 lượt đúng liên tiếp, đạt mục tiêu 7 ngày…) và kỷ lục mini-game. Huy hiệu mới mở được báo ngay.
 - **Sao lưu / khôi phục** toàn bộ dữ liệu ra file JSON; giao diện sáng / tối.
 
 ### Phím tắt khi luyện gõ

@@ -108,6 +108,7 @@ export function buildQueue(kind: SessionKind, words: readonly Word[], rng: Rng =
       return words.map((w) => item(w, 'copy', 1))
     case 'recall':
     case 'retry':
+    case 'game':
       return shuffle(words, rng).map((w) => item(w, 'recall'))
     case 'listen':
       return shuffle(words, rng).map((w) => item(w, 'listen'))
