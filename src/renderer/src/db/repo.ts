@@ -332,6 +332,17 @@ function cleanWord(input: WordInput): WordInput {
   }
 }
 
+/** Thông tin mở rộng (đồng nghĩa, cụm từ, họ từ, CEFR, nhãn) — chỉ giữ mục có dữ liệu để không ghi đè dữ liệu cũ. */
+function cleanExtras(input: CsvWord): Partial<Pick<Word, 'synonyms' | 'collocations' | 'family' | 'cefr' | 'tags'>> {
+  const out: Partial<Pick<Word, 'synonyms' | 'collocations' | 'family' | 'cefr' | 'tags'>> = {}
+  for (const k of ['synonyms', 'collocations', 'family', 'tags'] as const) {
+    const list = [...new Set((input[k] ?? []).map((x) => x.trim()).filter(Boolean))]
+    if (list.length) out[k] = list
+  }
+  if (input.cefr) out.cefr = input.cefr
+  return out
+}
+
 async function saveImage(file: Blob): Promise<string> {
   const image: StoredImage = { id: uid(), blob: file, mime: file.type || 'image/png' }
   await db.images.add(image)
@@ -401,7 +412,7 @@ export async function importWords(
     let skipped = 0
     const puts: Word[] = []
     rows.forEach((row, i) => {
-      const data = cleanWord(row)
+      const data = { ...cleanWord(row), ...cleanExtras(row) }
       if (!data.word || !data.meaningVi) {
         skipped++
         return
@@ -410,7 +421,8 @@ export async function importWords(
       if (old) {
         // Ô trống trong CSV không xóa dữ liệu đã có
         const filled = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== ''))
-        puts.push({ ...old, ...filled })
+        const tags = data.tags ? [...new Set([...(old.tags ?? []), ...data.tags])] : old.tags
+        puts.push({ ...old, ...filled, ...(tags ? { tags } : {}) })
         updated++
       } else {
         const w: Word = { ...data, id: `${topicId}:${uid()}`, topicId, isBuiltIn: false, createdAt: now + i }

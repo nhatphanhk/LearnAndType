@@ -16,7 +16,7 @@ export type CsvWord = Pick<Word, 'word' | 'meaningVi' | 'ipa' | 'partOfSpeech' |
   imageUrl?: string
   /** Tên chủ đề ghi trong file (cột `topic` / `chủ đề`) — dùng khi phân loại, không lưu vào từ. */
   topic?: string
-}
+} & Partial<Pick<Word, 'synonyms' | 'collocations' | 'family' | 'cefr' | 'tags'>>
 
 export interface CsvParseResult {
   rows: CsvWord[]

@@ -23,8 +23,8 @@ let isQuitting = false
 
 /* ------------------------------ Tra nhanh toàn cục ------------------------------ */
 
-const QUICK_W = 420
-const QUICK_H = 540
+const QUICK_W = 480
+const QUICK_H = 640
 const QUICK_MAX_TEXT = 200
 let quickWindow: BrowserWindow | null = null
 /** Chữ lấy từ clipboard ở lần gọi tra nhanh gần nhất. */
@@ -37,7 +37,9 @@ function createQuickWindow(): BrowserWindow {
     height: QUICK_H,
     show: false,
     frame: false,
-    resizable: false,
+    resizable: true,
+    minWidth: 400,
+    minHeight: 480,
     alwaysOnTop: true,
     skipTaskbar: true,
     minimizable: false,
@@ -74,9 +76,13 @@ function createQuickWindow(): BrowserWindow {
 function positionNearCursor(win: BrowserWindow): void {
   const pt = screen.getCursorScreenPoint()
   const area = screen.getDisplayNearestPoint(pt).workArea
-  const x = Math.min(Math.max(pt.x + 12, area.x), area.x + area.width - QUICK_W)
-  const y = Math.min(Math.max(pt.y + 12, area.y), area.y + area.height - QUICK_H)
-  win.setBounds({ x: Math.round(x), y: Math.round(y), width: QUICK_W, height: QUICK_H })
+  // Giữ cỡ người dùng đã kéo giãn (không vượt quá màn hình)
+  const [curW, curH] = win.getSize()
+  const w = Math.min(curW || QUICK_W, area.width)
+  const h = Math.min(curH || QUICK_H, area.height)
+  const x = Math.min(Math.max(pt.x + 12, area.x), area.x + area.width - w)
+  const y = Math.min(Math.max(pt.y + 12, area.y), area.y + area.height - h)
+  win.setBounds({ x: Math.round(x), y: Math.round(y), width: w, height: h })
 }
 
 async function openQuickLookup(): Promise<void> {

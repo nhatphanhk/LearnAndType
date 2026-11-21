@@ -79,8 +79,9 @@ const blankWord = (word: string, example = ''): CsvWord => ({
 /** Điền kết quả tra vào ô còn trống; chỉ đổi từ (về dạng gốc) nếu người dùng chưa sửa từ đó. */
 function applyPatch(d: CsvWord, patch: Partial<CsvWord>, originalWord: string): CsvWord {
   const out = { ...d }
-  for (const [k, val] of Object.entries(patch) as [keyof CsvWord, string | undefined][]) {
-    if (!val) continue
+  type TextKey = 'word' | 'meaningVi' | 'ipa' | 'partOfSpeech' | 'emoji' | 'example' | 'exampleVi' | 'imageUrl' | 'topic'
+  for (const [k, val] of Object.entries(patch) as [TextKey, unknown][]) {
+    if (!val || typeof val !== 'string') continue
     if (k === 'word') {
       if (d.word === originalWord) out.word = val
     } else if (!d[k]?.trim()) {

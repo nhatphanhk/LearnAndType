@@ -168,6 +168,25 @@ describe('importIntoTopics (phân loại khi nhập)', () => {
     expect(await words(res[1].topicId)).toEqual(['invoice', 'profit'])
   })
 
+  it('lưu thông tin mở rộng; nhập lại không xóa dữ liệu cũ, nhãn được gộp', async () => {
+    await ensureSeed(NOW)
+    const t = await createTopic({ name: 'Thi', nameEn: '', emoji: '' }, NOW)
+    const target = { kind: 'topic' as const, topicId: t }
+    await importIntoTopics(
+      [{ target, rows: [{ ...r('negotiate', 'đàm phán'), synonyms: ['bargain', ' '], collocations: ['negotiate a deal'], cefr: 'B2', tags: ['toeic'] }] }],
+      NOW
+    )
+    await importIntoTopics([{ target, rows: [{ ...r('negotiate', 'thương lượng'), synonyms: [], tags: ['ielts'] }] }], NOW)
+    const [w] = await db.words.where('topicId').equals(t).toArray()
+    expect(w).toMatchObject({
+      meaningVi: 'thương lượng',
+      synonyms: ['bargain'],
+      collocations: ['negotiate a deal'],
+      cefr: 'B2',
+      tags: ['toeic', 'ielts']
+    })
+  })
+
   it('không ghi vào chủ đề có sẵn và không tạo dở dang khi lỗi', async () => {
     await ensureSeed(NOW)
     await expect(

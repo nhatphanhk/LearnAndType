@@ -63,6 +63,13 @@ describe('buildExamIndex / lookupExam', () => {
     expect(lookupExam(index, 'deadlines')?.topics[0].topicId).toBe('pack-toeic-office')
     expect(lookupExam(index, 'unknownword')).toBeUndefined()
   })
+
+  it('giữ dữ liệu đầy đủ của từ trong gói (lấy gói đầu tiên)', () => {
+    const p = pack('toeic', 'toeic', [['finance', 'Tài chính', []]])
+    p.topics[0].words.push({ word: 'invoice', meaningVi: 'hóa đơn', synonyms: ['bill'], example: 'Send the invoice.', exampleVi: 'Gửi hóa đơn.' })
+    const idx = buildExamIndex([p, pack('ielts', 'ielts', [['x', 'X', ['invoice']]])], {})
+    expect(lookupExam(idx, 'invoices')?.data).toMatchObject({ meaningVi: 'hóa đơn', synonyms: ['bill'], exampleVi: 'Gửi hóa đơn.' })
+  })
 })
 
 describe('classifyWords', () => {

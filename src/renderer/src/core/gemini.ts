@@ -319,3 +319,159 @@ export async function testGeminiKey(apiKey: string, fetchFn?: FetchFn): Promise<
   )
   if (r.length !== 1) throw new GeminiError('test', 'bad-response')
 }
+
+/* ------------------------------ Giải thích từ (tra nhanh) ------------------------------ */
+
+export interface AiExplanation {
+  senses: { pos: string; meaningVi: string; explanationVi: string; example: string; exampleVi: string }[]
+  /** Cách dùng / cấu trúc, VD "deal with + N". */
+  usage: string
+  collocations: { en: string; vi: string }[]
+  family: { word: string; pos: string; meaningVi: string }[]
+  /** Phân biệt với từ dễ nhầm. */
+  confusables: { word: string; differenceVi: string }[]
+  /** Lỗi người Việt hay gặp. */
+  mistakes: string[]
+  /** Mẹo nhớ. */
+  mnemonic: string
+}
+
+export interface ExplainInput {
+  word: string
+  pos?: string
+  meaningVi?: string
+  definitions?: readonly string[]
+}
+
+const STR = { type: 'STRING' } as const
+const EXPLAIN_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    senses: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: { pos: STR, meaningVi: STR, explanationVi: STR, example: STR, exampleVi: STR },
+        required: ['pos', 'meaningVi', 'explanationVi', 'example', 'exampleVi']
+      }
+    },
+    usage: STR,
+    collocations: { type: 'ARRAY', items: { type: 'OBJECT', properties: { en: STR, vi: STR }, required: ['en', 'vi'] } },
+    family: {
+      type: 'ARRAY',
+      items: { type: 'OBJECT', properties: { word: STR, pos: STR, meaningVi: STR }, required: ['word', 'pos', 'meaningVi'] }
+    },
+    confusables: {
+      type: 'ARRAY',
+      items: { type: 'OBJECT', properties: { word: STR, differenceVi: STR }, required: ['word', 'differenceVi'] }
+    },
+    mistakes: { type: 'ARRAY', items: STR },
+    mnemonic: STR
+  },
+  required: ['senses', 'usage', 'collocations', 'family', 'confusables', 'mistakes', 'mnemonic']
+}
+
+const MAX_TEXT = 400
+const clip = (v: unknown, max = MAX_TEXT): string => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '')
+
+function objects<T>(v: unknown, max: number, pick: (o: Record<string, unknown>) => T | null): T[] {
+  if (!Array.isArray(v)) return []
+  const out: T[] = []
+  for (const item of v) {
+    if (!item || typeof item !== 'object') continue
+    const r = pick(item as Record<string, unknown>)
+    if (r) out.push(r)
+    if (out.length >= max) break
+  }
+  return out
+}
+
+/** Đọc và cắt gọn kết quả AI (bỏ mục thiếu dữ liệu). */
+export function parseExplanation(text: string): AiExplanation {
+  let o: unknown
+  try {
+    o = JSON.parse(text)
+  } catch {
+    throw new GeminiError('json', 'bad-response')
+  }
+  if (!o || typeof o !== 'object' || Array.isArray(o)) throw new GeminiError('not object', 'bad-response')
+  const d = o as Record<string, unknown>
+  const res: AiExplanation = {
+    senses: objects(d.senses, 4, (s) => {
+      const meaningVi = clip(s.meaningVi, 120)
+      return meaningVi
+        ? { pos: clip(s.pos, 20), meaningVi, explanationVi: clip(s.explanationVi), example: clip(s.example, 200), exampleVi: clip(s.exampleVi, 200) }
+        : null
+    }),
+    usage: clip(d.usage),
+    collocations: objects(d.collocations, 8, (c) => {
+      const en = clip(c.en, 80)
+      return en ? { en, vi: clip(c.vi, 120) } : null
+    }),
+    family: objects(d.family, 8, (f) => {
+      const word = clip(f.word, 40)
+      return word ? { word, pos: clip(f.pos, 20), meaningVi: clip(f.meaningVi, 120) } : null
+    }),
+    confusables: objects(d.confusables, 4, (c) => {
+      const word = clip(c.word, 40)
+      const differenceVi = clip(c.differenceVi)
+      return word && differenceVi ? { word, differenceVi } : null
+    }),
+    mistakes: (Array.isArray(d.mistakes) ? d.mistakes : []).map((m) => clip(m)).filter(Boolean).slice(0, 4),
+    mnemonic: clip(d.mnemonic)
+  }
+  if (res.senses.length === 0) throw new GeminiError('no senses', 'bad-response')
+  return res
+}
+
+const explainCache = new Map<string, AiExplanation>()
+
+/**
+ * Giải thích sâu một từ bằng tiếng Việt cho người học (nghĩa, cách dùng, cụm từ, họ từ, phân biệt, lỗi hay gặp, mẹo nhớ).
+ * Gửi lên Google: từ, loại từ, nghĩa tiếng Việt và tối đa 2 định nghĩa tiếng Anh. Kết quả được đệm trong phiên.
+ */
+export async function explainWordWithGemini(input: ExplainInput, opts: GeminiOptions): Promise<AiExplanation> {
+  if (!opts.apiKey.trim()) throw new GeminiError('no key', 'auth')
+  const key = input.word.trim().toLowerCase()
+  const hit = explainCache.get(key)
+  if (hit) return hit
+  const body = {
+    systemInstruction: {
+      parts: [
+        {
+          text:
+            'You are an English teacher for Vietnamese learners (TOEIC / IELTS). Explain the given English word so the learner ' +
+            'truly understands and remembers it. Write every explanation in natural Vietnamese; keep example sentences in English ' +
+            'with a Vietnamese translation. Give the 1-4 most common senses (most common first), the key grammar pattern(s) in ' +
+            '"usage", 3-6 common collocations, the word family (other parts of speech), 1-3 easily confused words with the difference, ' +
+            '1-3 typical mistakes Vietnamese learners make, and one short memorable mnemonic. Use short part-of-speech labels ' +
+            '(n, v, adj, adv, phr). Leave arrays empty rather than inventing rare items.'
+        }
+      ]
+    },
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            text: JSON.stringify({
+              word: input.word.trim(),
+              ...(input.pos ? { pos: input.pos } : {}),
+              ...(input.meaningVi?.trim() ? { meaning: input.meaningVi.trim() } : {}),
+              ...(input.definitions?.length ? { definitions: input.definitions.slice(0, 2) } : {})
+            })
+          }
+        ]
+      }
+    ],
+    generationConfig: { temperature: 0.3, responseMimeType: 'application/json', responseSchema: EXPLAIN_SCHEMA }
+  }
+  const res = parseExplanation(await generate(body, { ...opts, apiKey: opts.apiKey.trim() }))
+  explainCache.set(key, res)
+  return res
+}
+
+/** Chỉ dùng trong test. */
+export function clearExplainCache(): void {
+  explainCache.clear()
+}

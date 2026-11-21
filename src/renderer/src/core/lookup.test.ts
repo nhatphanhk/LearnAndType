@@ -77,13 +77,46 @@ beforeEach(() => clearLookupCache())
 
 describe('parseDictionary', () => {
   it('lấy phiên âm Anh-Mỹ, loại từ và câu ví dụ có chứa từ', () => {
-    expect(parseDictionary(NEGOTIATE, 'negotiate')).toEqual({
+    expect(parseDictionary(NEGOTIATE, 'negotiate')).toMatchObject({
       word: 'negotiate',
       ipa: '/nəˈɡoʊ.ʃi.eɪt/',
       partOfSpeech: 'v',
       example: 'He could negotiate the curves very well.',
-      definitions: ['To confer.', 'To arrange.', 'To cope.']
+      definitions: ['To confer.', 'To arrange.', 'To cope.'],
+      audio: { us: 'https://x/negotiate-us.mp3' }
     })
+  })
+
+  it('gộp nghĩa theo loại từ, giữ ví dụ, đồng nghĩa / trái nghĩa (bỏ trùng, bỏ chính từ đó)', () => {
+    const e = parseDictionary(
+      [
+        {
+          word: 'run',
+          phonetics: [{ audio: 'https://x/run-uk.mp3' }, { audio: 'https://x/run-us.mp3' }],
+          meanings: [
+            {
+              partOfSpeech: 'verb',
+              definitions: [{ definition: 'To move fast.', example: 'Run!', synonyms: ['sprint', 'Run'] }],
+              synonyms: ['sprint', 'dash'],
+              antonyms: ['walk']
+            },
+            { partOfSpeech: 'noun', definitions: [{ definition: 'An act of running.' }, { definition: '' }] },
+            { partOfSpeech: 'verb', definitions: [{ definition: 'To manage.' }] }
+          ]
+        }
+      ],
+      'run'
+    )
+    expect(e?.senses).toEqual([
+      {
+        pos: 'v',
+        definitions: [{ definition: 'To move fast.', example: 'Run!' }, { definition: 'To manage.' }],
+        synonyms: ['sprint', 'dash'],
+        antonyms: ['walk']
+      },
+      { pos: 'n', definitions: [{ definition: 'An act of running.' }], synonyms: [], antonyms: [] }
+    ])
+    expect(e?.audio).toEqual({ us: 'https://x/run-us.mp3', uk: 'https://x/run-uk.mp3' })
   })
 
   it('thêm dấu / quanh phiên âm và trả null khi không có mục nào', () => {

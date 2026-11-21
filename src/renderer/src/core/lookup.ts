@@ -42,6 +42,18 @@ export interface DictEntry {
   example: string
   /** Vài định nghĩa tiếng Anh đầu tiên — dùng để đoán chủ đề, không lưu. */
   definitions: string[]
+  /** Các nghĩa gộp theo loại từ (để hiển thị đầy đủ trong popup tra nhanh). */
+  senses: DictSense[]
+  /** File phát âm thật (nếu từ điển có). */
+  audio: { us?: string; uk?: string }
+}
+
+export interface DictSense {
+  /** Loại từ viết tắt (n, v, adj…) hoặc tên đầy đủ nếu không có trong bảng. */
+  pos: string
+  definitions: { definition: string; example?: string }[]
+  synonyms: string[]
+  antonyms: string[]
 }
 
 export function isAbort(e: unknown): boolean {
@@ -125,10 +137,54 @@ interface ApiEntry {
   word?: string
   phonetic?: string
   phonetics?: { text?: string; audio?: string }[]
-  meanings?: { partOfSpeech?: string; definitions?: { definition?: string; example?: string }[] }[]
+  meanings?: {
+    partOfSpeech?: string
+    definitions?: { definition?: string; example?: string; synonyms?: string[]; antonyms?: string[] }[]
+    synonyms?: string[]
+    antonyms?: string[]
+  }[]
 }
 
 const MAX_DEFINITIONS = 5
+const MAX_SENSE_DEFINITIONS = 4
+const MAX_RELATED = 8
+
+function uniqueWords(list: readonly (string | undefined)[], exclude: string, max = MAX_RELATED): string[] {
+  const seen = new Set([exclude.toLowerCase()])
+  const out: string[] = []
+  for (const raw of list) {
+    const s = raw?.trim()
+    if (!s || seen.has(s.toLowerCase())) continue
+    seen.add(s.toLowerCase())
+    out.push(s)
+    if (out.length >= max) break
+  }
+  return out
+}
+
+function parseSenses(meanings: NonNullable<ApiEntry['meanings']>, word: string): DictSense[] {
+  const byPos = new Map<string, DictSense & { raw: { syn: string[]; ant: string[] } }>()
+  for (const m of meanings) {
+    const name = m.partOfSpeech?.trim().toLowerCase() ?? ''
+    const pos = POS_MAP[name] ?? name
+    let s = byPos.get(pos)
+    if (!s) byPos.set(pos, (s = { pos, definitions: [], synonyms: [], antonyms: [], raw: { syn: [], ant: [] } }))
+    for (const d of m.definitions ?? []) {
+      const definition = d.definition?.trim()
+      if (definition && s.definitions.length < MAX_SENSE_DEFINITIONS) {
+        const example = d.example?.trim()
+        s.definitions.push(example ? { definition, example } : { definition })
+      }
+      s.raw.syn.push(...(d.synonyms ?? []))
+      s.raw.ant.push(...(d.antonyms ?? []))
+    }
+    s.raw.syn.push(...(m.synonyms ?? []))
+    s.raw.ant.push(...(m.antonyms ?? []))
+  }
+  return [...byPos.values()]
+    .map(({ raw, ...s }) => ({ ...s, synonyms: uniqueWords(raw.syn, word), antonyms: uniqueWords(raw.ant, word) }))
+    .filter((s) => s.definitions.length > 0)
+}
 
 export function parseDictionary(data: unknown, fallbackWord: string): DictEntry | null {
   const entries = (Array.isArray(data) ? data : []) as ApiEntry[]
@@ -160,7 +216,13 @@ export function parseDictionary(data: unknown, fallbackWord: string): DictEntry 
     .map((d) => d.definition?.trim() ?? '')
     .filter(Boolean)
     .slice(0, MAX_DEFINITIONS)
-  return { word, ipa, partOfSpeech, example, definitions }
+  const audios = entries.flatMap((e) => e.phonetics ?? []).map((p) => p.audio?.trim() ?? '')
+  const audio: DictEntry['audio'] = {}
+  const us = audios.find((a) => /-us\.mp3$/i.test(a))
+  const uk = audios.find((a) => /-uk\.mp3$/i.test(a))
+  if (us) audio.us = us
+  if (uk) audio.uk = uk
+  return { word, ipa, partOfSpeech, example, definitions, senses: parseSenses(meanings, word), audio }
 }
 
 /**
@@ -245,6 +307,8 @@ export interface FillResult {
   patch: Partial<CsvWord>
   /** Định nghĩa tiếng Anh từ từ điển (để đoán chủ đề). */
   definitions?: string[]
+  /** Toàn bộ mục từ điển (nếu tra được online). */
+  entry?: DictEntry
 }
 
 export interface AutofillOptions extends LookupOptions {
@@ -282,6 +346,15 @@ export function clearLookupCache(): void {
   transCache.clear()
 }
 
+/** `lookupDictionary` có bộ đệm (kể cả kết quả "không thấy"); lỗi mạng không được đệm. */
+export async function lookupDictionaryCached(word: string, opts: LookupOptions = {}): Promise<DictEntry | null> {
+  const key = word.trim().toLowerCase()
+  if (dictCache.has(key)) return dictCache.get(key)!
+  const entry = await lookupDictionary(word, opts)
+  dictCache.set(key, entry)
+  return entry
+}
+
 interface FillState {
   quota: boolean
   networkErrors: number
@@ -296,11 +369,7 @@ async function fillOne(row: CsvWord, state: FillState, opts: LookupOptions): Pro
   let entry: DictEntry | null = null
   const key = word.toLowerCase()
   try {
-    if (dictCache.has(key)) entry = dictCache.get(key)!
-    else {
-      entry = await lookupDictionary(word, opts)
-      dictCache.set(key, entry)
-    }
+    entry = await lookupDictionaryCached(word, opts)
   } catch (e) {
     if (isAbort(e)) throw e
     failed = true
@@ -343,7 +412,8 @@ async function fillOne(row: CsvWord, state: FillState, opts: LookupOptions): Pro
   return {
     status: found ? 'online' : failed ? 'error' : 'notfound',
     patch,
-    ...(entry?.definitions.length ? { definitions: entry.definitions } : {})
+    ...(entry?.definitions.length ? { definitions: entry.definitions } : {}),
+    ...(entry ? { entry } : {})
   }
 }
 

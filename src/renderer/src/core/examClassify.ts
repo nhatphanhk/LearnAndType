@@ -6,7 +6,7 @@
  * Khớp theo chữ thường, thử thêm dạng gốc (số nhiều, -ed, -ing).
  */
 import { lemmaCandidates } from './extract'
-import { packTopicId, toCefr, type PackExam, type PackFile } from './packs'
+import { packTopicId, toCefr, type PackExam, type PackFile, type PackWord } from './packs'
 import type { Cefr, Word } from '@/types'
 
 export interface ExamTopicRef {
@@ -26,6 +26,8 @@ export interface ExamEntry {
   cefr?: Cefr
   exams: PackExam[]
   topics: ExamTopicRef[]
+  /** Dữ liệu đầy đủ của từ trong gói đầu tiên chứa nó (ví dụ có dịch, đồng nghĩa, cụm từ, họ từ). */
+  data?: PackWord
 }
 
 export type ExamIndex = Map<string, ExamEntry>
@@ -71,6 +73,7 @@ export function buildExamIndex(packs: readonly PackFile[], levels: Readonly<Reco
         if (c && !e.cefr) e.cefr = c
         if (p.exam && p.exam !== 'general' && !e.exams.includes(p.exam)) e.exams.push(p.exam)
         if (ref && !e.topics.some((x) => x.key === ref.key)) e.topics.push(ref)
+        if (!e.data) e.data = w
       }
     }
   }

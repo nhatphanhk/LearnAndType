@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { GEMINI_MODELS, GeminiError, classifyWithGemini, geminiErrorMessage, resetGeminiState } from './gemini'
+import { GEMINI_MODELS, GeminiError, classifyWithGemini, clearExplainCache, explainWordWithGemini, geminiErrorMessage, parseExplanation, resetGeminiState } from './gemini'
 
 const topics = [
   { key: 'new:law', label: '⚖️ Pháp luật & xã hội' },
@@ -122,5 +122,45 @@ describe('classifyWithGemini', () => {
   it('có thông báo tiếng Việt cho từng loại lỗi', () => {
     expect(geminiErrorMessage(new GeminiError('x', 'quota'))).toMatch(/hạn mức/)
     expect(geminiErrorMessage(new GeminiError('x', 'auth'))).toMatch(/API key/)
+  })
+})
+
+describe('explainWordWithGemini', () => {
+  beforeEach(() => {
+    resetGeminiState()
+    clearExplainCache()
+  })
+  const good = {
+    senses: [
+      { pos: 'v', meaningVi: 'đàm phán', explanationVi: 'Bàn bạc để đạt thỏa thuận.', example: 'We negotiated a deal.', exampleVi: 'Chúng tôi đã đàm phán một thỏa thuận.' },
+      { pos: 'v', meaningVi: '', explanationVi: 'thiếu nghĩa → bỏ', example: '', exampleVi: '' }
+    ],
+    usage: 'negotiate with sb  /  negotiate sth',
+    collocations: [{ en: 'negotiate a contract', vi: 'đàm phán hợp đồng' }, { en: '', vi: 'bỏ' }],
+    family: [{ word: 'negotiation', pos: 'n', meaningVi: 'cuộc đàm phán' }],
+    confusables: [{ word: 'bargain', differenceVi: 'mặc cả giá' }, { word: 'x', differenceVi: '' }],
+    mistakes: ['negotiate about sth', ''],
+    mnemonic: 'nego-ti-ate'
+  }
+
+  it('đọc, bỏ mục thiếu dữ liệu và đệm kết quả theo từ', async () => {
+    let n = 0
+    const fetch = async (): Promise<Response> => {
+      n++
+      return reply(good)
+    }
+    const a = await explainWordWithGemini({ word: 'Negotiate', meaningVi: 'đàm phán' }, { apiKey: 'K', fetch })
+    expect(a.senses).toHaveLength(1)
+    expect(a.collocations).toEqual([{ en: 'negotiate a contract', vi: 'đàm phán hợp đồng' }])
+    expect(a.confusables).toHaveLength(1)
+    expect(a.mistakes).toEqual(['negotiate about sth'])
+    await explainWordWithGemini({ word: 'negotiate' }, { apiKey: 'K', fetch })
+    expect(n).toBe(1)
+  })
+
+  it('báo lỗi khi thiếu key, JSON hỏng hoặc không có nghĩa nào', async () => {
+    await expect(explainWordWithGemini({ word: 'a' }, { apiKey: ' ' })).rejects.toMatchObject({ kind: 'auth' })
+    expect(() => parseExplanation('not json')).toThrow(GeminiError)
+    expect(() => parseExplanation(JSON.stringify({ ...good, senses: [] }))).toThrow(GeminiError)
   })
 })
